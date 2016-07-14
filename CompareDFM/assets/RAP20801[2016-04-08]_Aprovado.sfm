@@ -1,0 +1,6697 @@
+
+
+
+[TFObjDfm]
+Caption=Contrato de Trabalho
+FirstFocus=Edcodigoug
+Height=562
+HelpContext=167
+Left=373
+Name=Form
+PopupMenu=Pmg
+HintStatusBar=LHint
+Atalhos
+
+Top=116
+UltimaAtualizacao=08/04/2016 17:34:45
+Width=629
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT010
+Params
+   idcontrato,Integer,Input
+RequestLive=True
+Sql
+   SELECT * FROM RAT01000
+   WHERE
+     idcontrato = :idcontrato
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT010A
+Params
+   cargarapida,Integer,Input
+   idfuncionario,Integer,Input
+   numcontrato,Integer,Input
+Sql
+   SELECT * FROM RAT01000
+   WHERE 0         = :cargarapida AND
+     idfuncionario = ISNULL(:idfuncionario, idfuncionario) AND
+     numcontrato   = ISNULL(:numcontrato, numcontrato)
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT001
+Params
+   cargarapida,Integer,Input
+   idcargo,Integer,Input
+   idempresa,Integer,Input
+   codcargo,Integer,Input
+   regimejur,Integer,Input
+Sql
+   SELECT A001.*,
+          X001.itemtabdiv,
+          X001a.itemtabdiv
+   FROM RAT00100 A001
+   LEFT JOIN RXT00100 X001  ON X001.idtabdiv  = A001.naturecargo
+   LEFT JOIN RXT00100 X001a ON X001a.idtabdiv = A001.regimejur
+   WHERE 0 = :cargarapida
+     AND A001.idcargo               = ISNULL(:idcargo,A001.idcargo)
+     AND A001.idempresa             = ISNULL(:idempresa,A001.idempresa)
+     AND A001.codcargo              = ISNULL(:codcargo,A001.codcargo)
+     AND ISNULL(A001.regimejur,0)   = ISNULL(:regimejur,ISNULL(A001.regimejur,0))
+     AND ISNULL(X001.itemtabdiv,0) <> 99
+     AND A001.dataextincao is null
+     AND ((ISNULL(A001.nivel,1) = 1 AND NOT EXISTS (SELECT 'TRUE' FROM RAT00100 A001a WHERE A001a.idmaster = A001.idcargo)) OR  -- Macro Cargo
+          (ISNULL(A001.nivel,1) = 2 AND EXISTS (SELECT 'TRUE' FROM RAT00100 A001b WHERE A001b.idcargo = A001.idmaster)))        -- Especialidade
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT001a
+Params
+   idcargo,Integer,Input
+Sql
+   SELECT * FROM RAT00100
+   WHERE idcargo = :idcargo
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT092
+Params
+   cargarapida,Integer,Input
+   idfonterecurso,Integer,Input
+   codfonterecurso,Integer,Input
+Sql
+   SELECT * FROM RAT09200
+   WHERE 0           = :cargarapida AND
+     idfonterecurso  = ISNULL(:idfonterecurso,idfonterecurso) AND
+     codfonterecurso = ISNULL(:codfonterecurso,codfonterecurso)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT009A
+Params
+   cargarapida,Integer,Input
+   idempresa,Integer,Input
+   matricfunci,Integer,Input
+Sql
+   SELECT idfuncionario,
+          nroconativo
+   FROM RAT00900
+   WHERE 0       = :cargarapida AND
+     idempresa   = ISNULL(:idempresa,idempresa) AND
+     matricfunci = ISNULL(:matricfunci,matricfunci)
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT002
+Params
+   cargarapida,Integer,Input
+   idpadrao,Integer,Input
+   idempresa,Integer,Input
+   identpadrao,String,Input
+   codpadrao,Integer,Input
+   idcontrato,Integer,Input
+Sql
+   DECLARE
+   @cargarapida  INT,
+   @idpadrao     INT,
+   @idempresa    INT,
+   @identpadrao  VARCHAR(10),
+   @codpadrao    INT,
+   @idcontrato   INT,
+   @datarecisao  DATETIME
+   
+   SET @cargarapida  = :cargarapida
+   SET @idpadrao     = :idpadrao
+   SET @idempresa    = :idempresa
+   SET @identpadrao  = :identpadrao
+   SET @codpadrao    = :codpadrao
+   SET @idcontrato   = :idcontrato
+   
+   SELECT @datarecisao = a029.datadesliga
+    FROM RAT01000 A010
+    LEFT JOIN RAT02900 A029 ON A029.iddesliga = a010.idcontrato
+   WHERE A010.idcontrato = @idcontrato
+   
+   SELECT A002.*, A003.valor, A003.anoreferenc, A003.mesreferenc
+    INTO #temp1
+    FROM RAT00200 A002
+    LEFT JOIN RAT00300 A003 ON A003.idpadrao = A002.idpadrao
+                           AND CONVERT(DATETIME, CONVERT(CHAR,A003.anoreferenc) + '-' +
+                               CONVERT(CHAR,A003.mesreferenc) + '-1') =
+                              (SELECT MAX(CONVERT(DATETIME, CONVERT(CHAR,A003a.anoreferenc) + '-' +
+                               CONVERT(CHAR,A003a.mesreferenc) + '-1'))
+                               FROM RAT00300 A003a
+                               WHERE A003a.idpadrao   = A002.idpadrao )
+   WHERE 0                = @cargarapida
+     AND a002.idpadrao    = ISNULL(@idpadrao,a002.idpadrao)
+     AND a002.identpadrao = ISNULL(@identpadrao,a002.identpadrao)
+     AND a002.codpadrao   = ISNULL(@codpadrao,a002.codpadrao)
+     AND a002.idempresa   = ISNULL(@idempresa,a002.idempresa)
+     AND @datarecisao IS NULL
+   
+   UNION
+   
+   SELECT A002.*, A003.valor, A003.anoreferenc, A003.mesreferenc
+    FROM RAT00200 A002
+    LEFT JOIN RAT00300 A003 ON A003.idpadrao = A002.idpadrao
+   WHERE 0                = @cargarapida
+     AND a002.idpadrao    = ISNULL(@idpadrao,a002.idpadrao)
+     AND a002.identpadrao = ISNULL(@identpadrao,a002.identpadrao)
+     AND a002.codpadrao   = ISNULL(@codpadrao,a002.codpadrao)
+     AND a002.idempresa   = ISNULL(@idempresa,a002.idempresa)
+     AND CONVERT(DATETIME, CONVERT(VARCHAR(4),A003.anoreferenc) + '-' +
+         CONVERT(VARCHAR(2),A003.mesreferenc) + '-1') <= @datarecisao
+   
+   SELECT TOP 1 * FROM #temp1
+   ORDER BY anoreferenc DESC ,mesreferenc DESC
+   DROP TABLE #temp1
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT005
+Params
+   cargarapida,Integer,Input
+   idchapeira,Integer,Input
+   idempresa,Integer,Input
+   numchapeira,Integer,Input
+Sql
+   SELECT A005.*,
+          A007.deslocal
+   FROM RAT00500 A005
+   INNER JOIN RAT00700 A007 ON A007.idlocal = A005.idlocal
+   WHERE 0 = :cargarapida AND
+     A005.idchapeira  = ISNULL(:idchapeira,A005.idchapeira) AND
+     A005.idempresa   = ISNULL(:idempresa,A005.idempresa)   AND
+     A005.numchapeira = ISNULL(:numchapeira,A005.numchapeira)
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT007
+Params
+   cargarapida,Integer,Input
+   idlocal,Integer,Input
+   idempresa,Integer,Input
+   codlocal,Integer,Input
+Sql
+   SELECT * FROM RAT00700
+   WHERE 0     = :cargarapida AND
+     idlocal   = ISNULL(:idlocal,idlocal) AND
+     idempresa = ISNULL(:idempresa,idempresa) AND
+     codlocal  = ISNULL(:codlocal,codlocal)
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT008
+Params
+   idunidorc,Integer,Input
+   codorganog,String,Input
+   exercicio,Integer,Input
+   idempresa,Integer,Input
+Sql
+   SELECT A008.* FROM RAT00800 A008
+   WHERE
+     A008.idunidorc  = ISNULL(:idunidorc, A008.idunidorc) AND
+     A008.codorganog = ISNULL(:codorganog, A008.codorganog) AND
+     A008.exercicio  = :exercicio AND
+     A008.idempresa  = :idempresa
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT009
+Params
+   cargarapida,Integer,Input
+   idfuncionario,Integer,Input
+   idempresa,Integer,Input
+   matricfunci,Integer,Input
+Sql
+   SELECT idfuncionario,
+          matricfunci,
+          nomefunciona,
+          grauinstruc,
+          datanascime,
+          nroconativo,
+          digmatric,
+          sindicancia
+   FROM RAT00900
+   WHERE 0         = :cargarapida AND
+     idfuncionario = ISNULL(:idfuncionario,idfuncionario) AND
+     idempresa     = ISNULL(:idempresa,idempresa) AND
+     matricfunci   = ISNULL(:matricfunci,matricfunci)
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT030
+Params
+   idcontrato,Integer,Input
+   exercicio,Integer,Input
+Sql
+   SELECT * FROM RAT03000
+   WHERE
+     idcontrato = :idcontrato AND
+     exercicio  = :exercicio
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001
+Sql
+   SELECT lot1 = (SELECT descrnormal
+                  FROM RXT00100
+                  WHERE codtabdiv  = 11 AND
+                        itemtabdiv = 1),
+          lot2 = (SELECT descrnormal
+                  FROM RXT00100
+                  WHERE codtabdiv  = 11 AND
+                        itemtabdiv = 2),
+          lot3 = (SELECT descrnormal
+                  FROM RXT00100
+                  WHERE codtabdiv  = 11 AND
+                        itemtabdiv = 3),
+          lot4 = (SELECT descrnormal
+                  FROM RXT00100
+                  WHERE codtabdiv  = 11 AND
+                        itemtabdiv = 4)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001a
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 17 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT014
+Params
+   cargarapida,Integer,Input
+   idempresp,Integer,Input
+   codemp,Integer,Input
+Sql
+   SELECT * FROM RXT01400
+   WHERE 0         = :cargarapida
+     AND idempresp = ISNULL(:idempresp,idempresp)
+     AND codemp    = ISNULL(:codemp,codemp)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001c
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 16 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001e
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 3 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001f
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 22 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001g
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 35 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001h
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 27 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001i
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 36 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001j
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 24 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001k
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 25 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001l
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 7 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001m
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  = 28 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001n
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  =  5 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001o
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE
+     codtabdiv  =  44 AND
+     itemtabdiv <> 0 AND
+     itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+     idtabdiv   = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001p
+Params
+   idtabdiv,Integer,Input
+Sql
+   SELECT
+   idtabdiv,
+   itemtabdiv,
+   descrnormal
+   FROM RXT00100
+   WHERE idtabdiv = :idtabdiv
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001q
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE codtabdiv   = 58
+     AND itemtabdiv <> 0
+     AND itemtabdiv  = ISNULL(:itemtabdiv,itemtabdiv)
+     AND idtabdiv    = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT005
+Params
+   cargarapida,Integer,Input
+   idbanco,Integer,Input
+   nrobanco,Integer,Input
+Sql
+   SELECT * FROM RXT00500
+   WHERE 0    = :cargarapida AND
+     idbanco  = ISNULL(:idbanco,idbanco) AND
+     nrobanco = ISNULL(:nrobanco,nrobanco)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT006
+Params
+   cargarapida,Integer,Input
+   idagencia,Integer,Input
+   idbanco,Integer,Input
+   codagencia,String,Input
+Sql
+   SELECT * FROM RXT00600
+   WHERE 0      = :cargarapida AND
+     idagencia  = ISNULL(:idagencia,idagencia) AND
+     idbanco    = ISNULL(:idbanco,idbanco) AND
+     codagencia = ISNULL(:codagencia,codagencia)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT007
+Params
+   idempresa,Integer,Input
+Sql
+   SELECT * FROM RXT00700
+   WHERE
+     idempresa   = :idempresa
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=qDataFimExerc
+Params
+   datainiexerc,DateTime,Input
+   datafimexerc,DateTime,Input
+   dias,Integer,Input
+Sql
+   Declare
+     @dini datetime,
+     @fim  datetime,
+     @dias int
+   
+   set @dini = :datainiexerc
+   set @fim  = :datafimexerc
+   set @dias = :dias
+   
+   select dias        = CASE
+                          WHEN @dias > 0 then @dias
+                          ELSE ISNULL(datediff(day,@dini,@fim)+1,0)
+                        END,
+          datainicio  = @dini,
+          datatermino = CASE
+                          WHEN @dias > 0 THEN DATEADD(DAY, @dias, @dini) - 1
+                          ELSE @fim
+                        END
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT008
+Params
+   idug,Integer,Input
+   codigoug,Integer,Input
+   idempresa,Integer,Input
+Sql
+   SELECT * FROM RXT00800
+   WHERE
+     idug      = ISNULL(:idug, idug) AND
+     codigoug  = ISNULL(:codigoug, codigoug) AND
+     idempresa = :idempresa
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT008A
+Params
+   idunidorc,Integer,Input
+   codorganog,String,Input
+   exercicio,Integer,Input
+   idempresa,Integer,Input
+Sql
+   SELECT A008.* FROM RAT00800 A008
+   INNER JOIN RXT00700 X007 ON X007.idempresa = A008.idempresa
+   WHERE
+     A008.idunidorc   = ISNULL(:idunidorc, A008.idunidorc) AND
+     A008.codorganog  = ISNULL(:codorganog, A008.codorganog) AND
+     A008.exercicio   = :exercicio AND
+     A008.idempresa   = :idempresa AND
+     A008.nivel      <= X007.nivcontrato
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT013
+Params
+   idhorario,Integer,Input
+   codhoratrab,Integer,Input
+   idempresa,Integer,Input
+Sql
+   SELECT * FROM RAT01300
+   WHERE
+     idhorario   = ISNULL(:idhorario, idhorario) AND
+     codhoratrab = ISNULL(:codhoratrab, codhoratrab) AND
+     idempresa   = :idempresa
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRFT025
+Params
+   idprevidpatr,Integer,Input
+Sql
+   SELECT X001.*,
+          idtabdiv_Categ    = X001A.idtabdiv,
+          itemtabdiv_Categ  = X001A.itemtabdiv,
+          descrreduz_Categ  = X001A.descrreduz,
+          descrnormal_Categ = X001A.descrnormal,
+          codregime         = X001B.itemtabdiv,
+          Desc_regime       = X001B.descrreduz,
+          F025.categsefip,
+          F025.categesocial,
+          F025.idprevidpatr
+   FROM RFT02500 F025
+   INNER JOIN RXT00100 X001A ON X001A.idtabdiv = F025.categsefip
+   INNER JOIN RXT00100 X001B ON X001B.idtabdiv = F025.regimejur
+   LEFT  JOIN RXT00100 X001  ON X001.idtabdiv  = F025.codpagto
+   WHERE F025.idprevidpatr  = :idprevidpatr
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT023
+Params
+   idatoadmin,Integer,Input
+   idempresa,Integer,Input
+   numatoadmin,Integer,Input
+   exercicio,Integer,Input
+Sql
+   SELECT * FROM RAT02300
+   WHERE
+     idatoadmin  = ISNULL(:idatoadmin, idatoadmin) AND
+     idempresa   = :idempresa AND
+     numatoadmin = ISNULL(:numatoadmin, numatoadmin) AND
+     exercicio   = ISNULL(:exercicio, exercicio)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=Qnumcontrato
+Params
+   idfuncionario,Integer,Input
+Sql
+   DECLARE @maximo INT
+   
+   SELECT @maximo = MAX(numcontrato) + 1
+   FROM RAT01000
+   WHERE
+     idfuncionario = :idfuncionario
+   
+   IF (@maximo IS NULL)
+     SET @maximo = 1
+   
+   SELECT maximo = @maximo
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QSeqCalculo
+Sql
+   SELECT seq = MAX(ISNULL(seqcalculo, 0)) + 1 FROM RAT01000
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT096
+Params
+   cargarapida,Integer,Input
+   idtemporario,Integer,Input
+   numprocesso,String,Input
+Sql
+   SELECT * FROM RAT09600
+   WHERE 0        = :cargarapida AND
+     idtemporario = isnull(:idtemporario,idtemporario) AND
+      numprocesso = isnull(:numprocesso,numprocesso)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=Qdata_adm
+Params
+   data,DateTime,Input
+Sql
+   DECLARE
+     @data              DATETIME,
+     @dia_semana        CHAR (3),
+     @EhFeriadoProducao CHAR (1)
+   
+   SET @data = :data
+   
+   SELECT @dia_semana        = DiaDaSemanaCalendario,
+          @EhFeriadoProducao = EhFeriadoProducao
+   FROM XXT00600
+   WHERE
+     DtCalendario = @data
+   
+   IF ((@dia_semana = 'Sab') OR (@dia_semana = 'Dom') OR (@EhFeriadoProducao = 'S'))
+     WHILE ((@dia_semana = 'Sab') OR (@dia_semana = 'Dom') OR (@EhFeriadoProducao = 'S'))
+     BEGIN
+       SET @data = DATEADD(DAY, 1, @data)
+   
+       SELECT @dia_semana        = DiaDaSemanaCalendario,
+              @EhFeriadoProducao = EhFeriadoProducao
+       FROM XXT00600
+       WHERE
+         DtCalendario = @data
+     END
+   
+   SELECT prox_dia_util = @data
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=Qccorrente
+Params
+   cargarapida,Integer,Input
+   ccorrente,String,Input
+Sql
+   SELECT ccorrente_existe = 1 FROM RAT01000
+   WHERE 0 = :cargarapida
+     AND RTRIM(LTRIM(REPLACE(REPLACE(numccorrent, '-', ''), '.', ''))) = RTRIM(LTRIM(REPLACE(REPLACE(:ccorrente, '-', ''), '.', '')))
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=qVerifErro
+Params
+   idfuncionario,Integer,Input
+   numcontrato,Integer,Input
+Sql
+   SELECT erro = count(1)
+   FROM RAV15900
+   WHERE idfuncionario = :idfuncionario
+     AND numcontrato   = :numcontrato
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT093
+Params
+   idpadraoadm,Integer,Input
+   codpadraoadm,Integer,Input
+   regimejur,Integer,Input
+Sql
+   SELECT * FROM RAT09300 A093
+   INNER JOIN RXT00100 X001 ON X001.idtabdiv = A093.regimejur
+   WHERE A093.idpadraoadm  = ISNULL(:idpadraoadm,A093.idpadraoadm)
+     AND A093.codpadraoadm = ISNULL(:codpadraoadm,A093.codpadraoadm)
+     AND X001.idtabdiv     = :regimejur
+     AND A093.desativado   = 0
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRAT007a
+Params
+   cargarapida,Integer,Input
+   idlocal,Integer,Input
+   idempresa,Integer,Input
+   codlocal,Integer,Input
+Sql
+   SELECT * FROM RAT00700
+   WHERE 0     = :cargarapida AND
+     idlocal   = ISNULL(:idlocal,idlocal) AND
+     idempresa = ISNULL(:idempresa,idempresa) AND
+     codlocal  = ISNULL(:codlocal,codlocal)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001ap
+Params
+   idtabdiv,Integer,Input
+   itemtabdiv,Integer,Input
+Sql
+   SELECT * FROM RXT00100
+   WHERE idtabdiv  = ISNULL(:idtabdiv,idtabdiv) AND
+         codtabdiv  = 7 AND
+         itemtabdiv = ISNULL(:itemtabdiv,itemtabdiv) AND
+         itemtabdiv > 0
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QValidaCCorrente
+Sql
+   SELECT valor = CASE
+                   WHEN ISNULL((SELECT dbo.RXD03200('SMARrh', 'RAP20801-Conta_Corrente_Nulo')),'N') NOT IN ('S', 'N') THEN 'N'
+                   ELSE ISNULL((SELECT dbo.RXD03200('SMARrh', 'RAP20801-Conta_Corrente_Nulo')),'N')
+                 END
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QParametros
+Sql
+   IF (select 1 from XXT00900 WHERE tpparamsis = 'SMARrh'
+                                AND nomeparamsis = 'Tipo_Consulta_PadraoSalario') = 1
+      SELECT valorparamsis = CASE ValorParamSis WHEN 'C' THEN 'C'
+                                                ELSE 'S'
+                             END
+      FROM XXT00900
+     WHERE tpparamsis = 'SMARrh'
+       AND nomeparamsis = 'Tipo_Consulta_PadraoSalario'
+   ELSE
+      SELECT valorparamsis = 'S'
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QParametros2
+Sql
+   IF (select 1 from XXT00900 WHERE tpparamsis = 'SMARrh'
+                                AND nomeparamsis = 'RAP20801-CtrlHrsDiaVinc') = 1
+      SELECT valorparamsis = CASE ValorParamSis WHEN 'N' THEN 'N'
+                                                ELSE 'S'
+                             END
+      FROM XXT00900
+     WHERE tpparamsis = 'SMARrh'
+       AND nomeparamsis = 'RAP20801-CtrlHrsDiaVinc'
+   ELSE
+      SELECT valorparamsis = 'S'
+
+[TwwQuery]
+AutoCalcFields=False
+ControlType
+   bloqueia;CheckBox;True;False
+DataBaseName=DBObj
+Name=QRAT157
+Params
+   idcontrato,Integer,Input
+RequestLive=True
+Sql
+   SELECT *
+   FROM dbo.RAT15700 A157
+   WHERE A157.idcontrato = :idcontrato
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QDeleteBloq
+Params
+   idcontrato,Integer,Input
+Sql
+   DECLARE @idcontrato INT
+   
+   SET @idcontrato = :idcontrato
+   
+   -- Deleta os Periodos Relacionados a RAT05000 - Beneficios
+   DELETE RAT05100
+     FROM RAT05000 A050
+    INNER JOIN RAT15700 A157 ON A157.idcontrato = A050.idcontrato
+                            AND A157.idparcts   = A050.idparcts
+                            AND A157.bloqueia   = 1
+    WHERE A050.idtempserv  = RAT05100.idtempserv
+      AND A050.idcontrato  = @idcontrato
+      AND A050.statperiodo < 3
+   
+   -- Deleta os Fato Gerador com Bloqueia = 1
+   DELETE RAT05000
+     FROM RAT15700 A157
+    WHERE A157.idcontrato = RAT05000.idcontrato
+      AND A157.idparcts   = RAT05000.idparcts
+      AND A157.idcontrato = @idcontrato
+      AND A157.bloqueia   = 1
+      AND statperiodo < 3
+   
+   -- Deleta os Periodos Relacionados a RAT01600 - Férias
+   DELETE RAT09400
+     FROM RAT01600 A016
+    INNER JOIN RAT04600 A046 ON A046.atualiza    = 0
+    INNER JOIN RAT01000 A010 ON A010.idcontrato  = A016.idcontrato
+    INNER JOIN RAT08600 A086 ON A086.idparcts    = A046.idparcts
+                            AND A086.catfunciona = A010.catfunciona
+    INNER JOIN RAT12500 A125 ON A125.idparcts    = A046.idparcts
+                            AND A125.regimejur   = A010.regimejur
+    INNER JOIN RAT15700 A157 ON A157.idcontrato  = A010.idcontrato
+                            AND A157.idparcts    = A046.idparcts
+                            AND A157.bloqueia    = 1
+    WHERE A016.idperaqui  = RAT09400.idperaqui
+      AND A010.idcontrato = @idcontrato
+      AND A010.idcontrato = A016.idcontrato
+      AND A016.situacao NOT IN('Q', 'C', 'S')
+   
+   -- Deleta Ferias com Bloqueia = 1
+   DELETE RAT01600
+     FROM RAT01000 A010
+    INNER JOIN RAT04600 A046 ON A046.atualiza    = 0
+    INNER JOIN RAT08600 A086 ON A086.idparcts    = A046.idparcts
+                            AND A086.catfunciona = A010.catfunciona
+    INNER JOIN RAT12500 A125 ON A125.idparcts    = A046.idparcts
+                            AND A125.regimejur   = A010.regimejur
+    INNER JOIN RAT15700 A157 ON A157.idcontrato  = A010.idcontrato
+                            AND A157.idparcts    = A046.idparcts
+                            AND A157.bloqueia    = 1
+    WHERE A010.idcontrato = @idcontrato
+      AND A010.idcontrato = RAT01600.idcontrato
+      AND RAT01600.situacao NOT IN('Q', 'C', 'S')
+Tag=1
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QProxIdcontrato
+Sql
+   SELECT id = IDENT_CURRENT('RAT01000')
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QCancelInsert
+Params
+   idcontrato,Integer,Input
+Sql
+   DECLARE @idcontrato INT
+   
+   SET @idcontrato = :idcontrato
+   
+   ------------------------------------------------------------------------------------
+   -- DELETE REGISTRO RELACIONADOS A CTS (BENEFICIOS E FERIAS)
+   ------------------------------------------------------------------------------------
+   -- Deleta os Periodos Relacionados a RAT05000 - Beneficios
+   DELETE RAT05100
+     FROM RAT05000 A050
+    WHERE A050.idtempserv  = RAT05100.idtempserv
+      AND A050.idcontrato  = @idcontrato
+   
+   -- Deleta os Fato Gerador com Bloqueia = 1
+   DELETE RAT05000
+    WHERE idcontrato = @idcontrato
+   
+   -- Deleta os Periodos Relacionados a RAT01600 - Férias
+   DELETE RAT09400
+     FROM RAT01600 A016
+    WHERE A016.idperaqui  = RAT09400.idperaqui
+      AND A016.idcontrato = @idcontrato
+   
+   -- Deleta Ferias com Bloqueia = 1
+   DELETE RAT01600
+    WHERE idcontrato = @idcontrato
+   
+   -- Deleta RAT01900(Periodo Aquisitivo Licença Premio)
+      DELETE RAT01900
+      WHERE idcontrato = @idcontrato
+   
+   -- Deleta RAT15700(Bloqueia períodos CTS por contratos)
+      DELETE RAT15700
+      WHERE idcontrato = @idcontrato
+   
+   ------------------------------------------------------------------------------------
+   -- DELETE REGISTRO RELACIONADOS AO HISTORICO FUNCIONAL
+   ------------------------------------------------------------------------------------
+      DELETE RAT14700
+      WHERE idcontrato = @idcontrato
+   
+   ------------------------------------------------------------------------------------
+   -- DELETE REGISTRO RELACIONADOS AO HISTORICO DE CHAPEIRA
+   ------------------------------------------------------------------------------------
+      DELETE RAT15900
+      WHERE idcontrato = @idcontrato
+   
+   ------------------------------------------------------------------------------------
+   -- DELETE REGISTRO RAT01000 (CONTRATO)
+   ------------------------------------------------------------------------------------
+      DELETE RAT01000
+      WHERE idcontrato = @idcontrato
+Tag=1
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QXXT005
+Params
+   idusr,Integer,Input
+   usr,String,Input
+Sql
+   SELECT usr,idusr
+   FROM XXT00500
+   WHERE idusr = ISNULL(:idusr,idusr)
+     AND usr   = ISNULL(:usr,usr)
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QContratoAnt
+Params
+   idcontratoant,Integer,Input
+Sql
+   SELECT RAT00900.matricfunci, RAT00900.nomefunciona, RAT01000.numcontrato, RAT01000.descontrato
+   FROM RAT01000
+   INNER JOIN RAT00900 ON RAT00900.idfuncionario = RAT01000.idfuncionario
+   WHERE RAT01000.idcontrato = :idcontratoant
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QControlaFRCusteio
+Params
+   exercicio,Integer,Input
+   custeio,Integer,Input
+   fonterecurso,Integer,Input
+Sql
+   SELECT 1 AS Existe FROM RFT02100
+   WHERE exercicio      = :exercicio
+     AND idunidorc      = :custeio
+     AND idfonterecurso = :fonterecurso
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QControlaFonteRecurso
+Params
+   exercicio,Integer,Input
+   fonterecurso,Integer,Input
+Sql
+   SELECT 1 AS Existe FROM RFT02100
+   WHERE exercicio      = :exercicio
+     AND idfonterecurso = :fonterecurso
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QControlaCusteio
+Params
+   exercicio,Integer,Input
+   custeio,Integer,Input
+Sql
+   SELECT 1 AS Existe FROM RFT02100
+   WHERE exercicio = :exercicio
+     AND idunidorc = :custeio
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QLiberaHrsDiaSem
+Sql
+   IF (select 1 from XXT00900 WHERE tpparamsis = 'SMARrh'
+                                AND nomeparamsis = 'RAP20801-LiberaHrsDiaSem') = 1
+      SELECT ValorParametro = CASE ValorParamSis WHEN 'S' THEN 'S'
+                                                ELSE 'N'
+                             END
+      FROM XXT00900
+     WHERE tpparamsis = 'SMARrh'
+       AND nomeparamsis = 'RAP20801-LiberaHrsDiaSem'
+   ELSE
+      SELECT ValorParametro = 'S'
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QLiberaHorario
+Sql
+   IF (SELECT 1 from XXT00900 WHERE tpparamsis = 'SMARrh'
+                                AND nomeparamsis = 'RAP20801-LiberaHorario') = 1
+      SELECT ValorParametro = CASE ValorParamSis WHEN 'S' THEN 'S'
+                                                ELSE 'N'
+                             END
+      FROM XXT00900
+     WHERE tpparamsis = 'SMARrh'
+       AND nomeparamsis = 'RAP20801-LiberaHorario'
+   ELSE
+      SELECT ValorParametro = 'S'
+
+[TwwQuery]
+Active=True
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=qDigitoMatricula
+Sql
+   SELECT
+   Digito = CASE WHEN valorparamsis LIKE '%T%' THEN 'S' ELSE 'N' END
+   FROM XXT00900
+   WHERE
+       tpparamsis   = 'SMARrh'
+   AND nomeparamsis = 'DigitoMatricula'
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QUtilizaChapeira
+Sql
+   IF EXISTS (SELECT 1 FROM XXT00900 WHERE tpparamsis = 'SMARrh'
+              AND nomeparamsis = 'RAT140-Utiliza_Transf_Chapeira')
+   
+      SELECT ValorParametro = CASE ValorParamSis
+                                WHEN 'S' THEN 'S'
+                                ELSE 'N'
+                              END
+      FROM  XXT00900
+      WHERE tpparamsis   = 'SMARrh'
+      AND   nomeparamsis = 'RAT140-Utiliza_Transf_Chapeira'
+   
+   ELSE
+      SELECT ValorParametro = 'N'
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QAgNocivoVin
+Params
+   idfuncionario,Integer,Input
+   regimejur,Integer,Input
+Sql
+   DECLARE @idfuncionario INT,
+           @regimejur     INT,
+           @relatorio     VARCHAR(8)
+   
+   SET @idfuncionario = :idfuncionario
+   SET @regimejur     = :regimejur
+   SET @relatorio     = 'AGNOCVIN'
+   
+   SELECT a009.matricfunci, vinculos = COUNT(*)
+   FROM RAT01000 A010
+   INNER JOIN RFT03801 F038 ON F038.idtabdiv      = A010.regimejur
+   INNER JOIN RFT03700 F037 ON F037.idfolsintcol  = F038.idfolsintcol
+                           AND F037.nrocoluna     = 1
+   INNER JOIN RFT04000 F040 ON F040.idtitulo      = F037.idtitulo
+                           AND F040.nomerelatorio = @relatorio
+   INNER JOIN RAT00900 A009 ON A009.idfuncionario = A010.idfuncionario
+   LEFT  JOIN RXT00100 X001 ON X001.idtabdiv      = A010.agentnociv
+                           AND X001.codtabdiv     = 25
+   WHERE A010.idfuncionario    = @idfuncionario
+     AND A010.rescisao         = 0
+     AND A010.semprocessamento < 2
+     AND EXISTS (SELECT 1 FROM XXT00900 WHERE TpParamSis = 'SMARrh' AND NomeParamSis = 'RAP20801-AgNocivoMultiVinculo' AND ValorParamSis = 'S')
+     AND EXISTS (SELECT 1 FROM RFT03801 F038a WHERE idtabdiv = @regimejur AND idfolsintcol = F037.idfolsintcol)
+   GROUP BY A010.idfuncionario, a009.matricfunci
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=qVerifESocial
+Sql
+   SELECT dbo.RXD03300('SMARrh', 'eSocial-Campos_Obrigatorios') AS Visualiza
+
+[TwwDataSource]
+DataSet=QRAT010
+Name=DSRAT010
+
+[TwwDataSource]
+DataSet=QRAT001
+Name=DSRAT001
+
+[TwwDataSource]
+DataSet=QRAT002
+Name=DSRAT002
+
+[TwwDataSource]
+DataSet=QRAT096
+Name=DSRAT096
+
+[TwwDataSource]
+DataSet=QRAT007a
+Name=DSRAT007a
+
+[TwwDataSource]
+DataSet=QXXT005
+Name=DSXXT005
+
+[TwwDataSource]
+DataSet=QRAT005
+Name=DSRAT005
+
+[TwwDataSource]
+DataSet=QRAT007
+Name=DSRAT007
+
+[TwwDataSource]
+DataSet=QRAT008
+Name=DSRAT008
+
+[TwwDataSource]
+DataSet=QRAT009
+Name=DSRAT009
+
+[TwwDataSource]
+DataSet=QRAT030
+Name=DSRAT030
+
+[TwwDataSource]
+DataSet=QRXT001
+Name=DSRXT001
+
+[TwwDataSource]
+DataSet=QRXT001a
+Name=DSRXT001a
+
+[TwwDataSource]
+DataSet=QRXT014
+Name=DSRXT014
+
+[TwwDataSource]
+DataSet=QRXT001c
+Name=DSRXT001c
+
+[TwwDataSource]
+DataSet=QRXT001e
+Name=DSRXT001e
+
+[TwwDataSource]
+DataSet=QRXT001f
+Name=DSRXT001f
+
+[TwwDataSource]
+DataSet=QRXT001g
+Name=DSRXT001g
+
+[TwwDataSource]
+DataSet=QRXT001h
+Name=DSRXT001h
+
+[TwwDataSource]
+DataSet=QRXT001i
+Name=DSRXT001i
+
+[TwwDataSource]
+DataSet=QRXT001j
+Name=DSRXT001j
+
+[TwwDataSource]
+DataSet=QRXT001k
+Name=DSRXT001k
+
+[TwwDataSource]
+DataSet=QRXT001m
+Name=DSRXT001m
+
+[TwwDataSource]
+DataSet=QRXT001n
+Name=DSRXT001n
+
+[TwwDataSource]
+DataSet=QRXT001o
+Name=DSRXT001o
+
+[TwwDataSource]
+DataSet=QRXT001q
+Name=DSRXT001q
+
+[TwwDataSource]
+DataSet=QRXT005
+Name=DSRXT005
+
+[TwwDataSource]
+DataSet=QRXT006
+Name=DSRXT006
+
+[TwwDataSource]
+DataSet=QRXT007
+Name=DSRXT007
+
+[TwwDataSource]
+DataSet=QRXT008
+Name=DSRXT008
+
+[TwwDataSource]
+DataSet=QRAT008A
+Name=DSRAT008A
+
+[TwwDataSource]
+DataSet=QRAT013
+Name=DSRAT013
+
+[TwwDataSource]
+DataSet=QRFT025
+Name=DSRFT025
+
+[TwwDataSource]
+DataSet=QRAT023
+Name=DSRAT023
+
+[TwwDataSource]
+DataSet=QRAT092
+Name=DSRAT092
+
+[TwwDataSource]
+DataSet=QRAT093
+Name=DSRAT093
+
+[TwwDataSource]
+DataSet=QRAT157
+Name=DSRAT157
+
+[TwwDataSource]
+AutoEdit=False
+DataSet=QContratoAnt
+Name=DSContratoAnt
+
+[TPanel]
+Align=Top
+BevelWidth=1
+BorderWidth=0
+Caption=  
+Height=35
+Left=0
+Name=Pn1
+Parent=Form
+TabOrder=2
+Top=0
+Width=613
+
+[TZPanel]
+Align=Right
+BevelOuter=None
+BevelWidth=1
+BorderWidth=0
+Caption=  
+ConsistirUsr=True
+DataSet=QRAT010
+Height=33
+HelpContext=0
+Left=537
+Name=PanelButtons
+Navigator=
+NomeTarefa=RAP20801
+Parent=Pn1
+ParentForm=Form
+TabOrder=1
+Top=1
+Width=75
+
+[TZPageControl]
+Align=Client
+Height=466
+Left=0
+Name=Pgc
+Parent=Form
+PanelButtoms=
+PopupMenu=
+Top=35
+Width=613
+
+[TTabSheet]
+Caption=&Registro Funcional
+Height=438
+HelpContext=0
+Left=4
+Name=TabContrato
+PageControl=Pgc
+PageIndex=0
+TabStop=False
+Top=24
+Width=605
+
+[TGroupBox]
+Align=Client
+Caption=
+Height=438
+HelpContext=0
+Left=0
+Name=GroupContrib
+Parent=TabContrato
+TabOrder=0
+TabStop=False
+Top=0
+Width=605
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idfuncionario
+EditWidth=52
+FindDataSet=QRAT009
+FindField=matricfunci
+FindModified=True
+FindRequired=True
+HelpContext=1364
+Hint=Número da matrícula do funcionário (Registro de Pessoal)
+LabelCaption=Matrícula
+LabelWidth=48
+Left=26
+Name=Edmatricfunci
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=SLMatricula
+TabOrder=4
+Top=52
+
+[TDBCheckBox]
+Alignment=Left
+Caption=Principal
+DataField=contrativ
+DataSource=DSRAT010
+Height=15
+HelpContext=125
+Hint=Contrato principal
+Left=528
+Name=Checkcontrativ
+Parent=GroupContrib
+ReadOnly=False
+TabOrder=2
+Top=25
+ValueChecked=S
+ValueUnChecked=N
+Width=63
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=regimejur
+EditWidth=52
+FindDataSet=QRXT001n
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=119
+Hint=Regime de trabalho
+LabelCaption=Regime
+LabelWidth=40
+Left=34
+Name=Edregimejur
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=SLRegime
+TabOrder=6
+Top=80
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idcargo
+EditWidth=52
+FindDataSet=QRAT001
+FindField=codcargo
+FindModified=True
+FindRequired=True
+HelpContext=120
+Hint=Símbolo do cargo
+LabelCaption=Cargo
+LabelWidth=32
+Left=42
+Name=Edcodcargo
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=SLCargo
+TabOrder=8
+Top=107
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=identpadrao
+EditWidth=52
+FindDataSet=QRAT002
+FindField=codpadrao
+FindModified=True
+FindRequired=True
+HelpContext=136
+Hint=Padrão de salário
+LabelCaption=Padrão Salário
+LabelWidth=72
+Left=2
+Name=Edcodpadrao
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=SLCodPadrao
+TabOrder=12
+Top=161
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditWidth=52
+FindDataSet=QRXT001o
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=141
+Hint=Código do tipo de admissão para a RAIS
+LabelCaption=Tipo Adm
+LabelWidth=48
+Left=25
+Name=Edtipadmrais
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=SLTipAdm
+TabOrder=14
+Top=216
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=tipadmcaged
+EditWidth=52
+FindDataSet=QRXT001h
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=140
+Hint=Código de movimentação do CAGED na admissão
+LabelCaption=CAGED
+LabelWidth=40
+Left=34
+Name=Edtipadmcaged
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=SLCaged
+TabOrder=15
+Top=269
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=
+EditDataField=vincemprega
+EditWidth=52
+Enabled=False
+FindDataSet=QRXT001a
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=127
+Hint=Vínculo empregatício
+LabelCaption=Vínculo
+LabelWidth=40
+Left=34
+Name=Edvincemprega
+Parent=GroupContrib
+PopupMenu=
+TabOrder=21
+Top=296
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=datadmissao
+EditWidth=80
+HelpContext=130
+Hint=Data da admissão no serviço público
+LabelCaption=Admissão
+LabelWidth=48
+Left=410
+Name=Eddatadmissao
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=WCalButton
+TabOrder=19
+Top=269
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=datanomeaca
+EditWidth=80
+HelpContext=128
+Hint=Data da nomeação do servidor no cargo
+LabelCaption=Nomeação
+LabelWidth=56
+Left=402
+Name=Eddatanomeaca
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=WCalButton1
+TabOrder=17
+Top=217
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=datadeposse
+EditWidth=80
+HelpContext=129
+Hint=Data da posse do servidor no cargo
+LabelCaption=Posse
+LabelWidth=32
+Left=426
+Name=Eddatadeposse
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=WCalButton2
+TabOrder=18
+Top=244
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=datainiexerc
+EditWidth=72
+HelpContext=131
+Hint=Data de início da frequência para efetivo exercício
+LabelCaption=Início
+LabelWidth=28
+Left=44
+Name=Eddatainiexerc
+Parent=GBVigencia
+PopupMenu=
+SpeedLookup=WCInicio
+TabOrder=0
+Top=23
+
+[TDBCheckBox]
+Alignment=Left
+Caption=
+DataField=funconv
+DataSource=DSRAT010
+Enabled=False
+Height=15
+HelpContext=123
+Hint=Convidado externo para assumir o cargo em comissão
+Left=469
+Name=Checkfunconv
+Parent=GroupContrib
+ReadOnly=False
+TabOrder=25
+Top=302
+ValueChecked=S
+ValueUnChecked=N
+Width=13
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=tiposalcont
+EditWidth=52
+FindDataSet=QRXT001f
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=134
+Hint=Tipo de salário
+LabelCaption=Tipo Salário
+LabelWidth=60
+Left=14
+Name=Edtiposalcont
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=SLTipoSal
+TabOrder=16
+Top=324
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idempresp
+EditWidth=52
+FindDataSet=QRXT014
+FindField=codemp
+FindModified=True
+FindRequired=True
+HelpContext=138
+Hint=Código do sindicato
+LabelCaption=Sindicato
+LabelWidth=48
+Left=26
+Name=Edcodsindicat
+Parent=GBLotacao
+PopupMenu=
+SpeedLookup=SLSindicato
+TabOrder=6
+Top=137
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=grupoproc
+EditWidth=52
+FindDataSet=QRXT001e
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=139
+Hint=Grupo de processamento
+LabelCaption=Grupo
+LabelWidth=32
+Left=43
+Name=Edgrupoproc
+Parent=GBPagto
+PopupMenu=
+SpeedLookup=SLGrpProcess
+TabOrder=5
+Top=92
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=
+EditDataField=catfunciona
+EditWidth=52
+Enabled=False
+FindDataSet=QRXT001c
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=137
+Hint=Categoria funcional
+LabelCaption=Cat Funcional
+LabelWidth=68
+Left=6
+Name=Edcatfunciona
+Parent=GroupContrib
+PopupMenu=
+TabOrder=23
+Top=242
+
+[TTabSheet]
+Caption=&Lotação/Custeio
+Height=438
+HelpContext=0
+Left=4
+Name=TabLotUnidOrc
+PageControl=Pgc
+PageIndex=1
+TabStop=False
+Top=24
+Width=605
+
+[TTabSheet]
+Caption=&Ponto/Pagamento/Recolhimento
+Height=438
+HelpContext=151
+Left=4
+Name=TabFGTS
+PageControl=Pgc
+PageIndex=2
+TabStop=False
+Top=24
+Width=605
+
+[TGroupBox]
+Align=Client
+Caption=
+Height=438
+HelpContext=0
+Left=0
+Name=GBLotCus
+Parent=TabLotUnidOrc
+TabOrder=0
+TabStop=False
+Top=0
+Width=605
+
+[TGroupBox]
+Align=Client
+Caption=
+Height=438
+HelpContext=0
+Left=0
+Name=GPPagRec
+Parent=TabFGTS
+TabOrder=0
+TabStop=False
+Top=0
+Width=605
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT010
+EditDataField=datafimexerc
+EditWidth=72
+Enabled=False
+HelpContext=133
+Hint=Data de término do contrato para regime de contratação temporária, sem prorrogação
+LabelCaption=Término
+LabelWidth=40
+Left=32
+Name=Eddatafimcontrato
+Parent=GBVigencia
+PopupMenu=
+SpeedLookup=WCTermino
+TabOrder=2
+Top=52
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=numchapeira
+EditWidth=52
+FindDataSet=QRAT005
+FindField=numchapeira
+FindModified=True
+FindRequired=True
+HelpContext=143
+Hint=Número da chapeira
+LabelCaption=Chapeira
+LabelWidth=44
+Left=33
+Name=Ednumchapeira
+Parent=GBPonto
+PopupMenu=
+SpeedLookup=SLChapeira
+TabOrder=4
+Top=41
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=cartaochape
+EditWidth=48
+Enabled=False
+HelpContext=144
+Hint=Número do cartão de ponto na chapeira
+LabelCaption=Número Cartão
+LabelWidth=72
+Left=442
+Name=Edcartaochape
+Parent=GBPonto
+PopupMenu=
+TabOrder=5
+Top=42
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idlotacao
+EditWidth=76
+FindDataSet=QRAT008A
+FindField=codorganog
+FindModified=True
+FindRequired=True
+HelpContext=148
+Hint=Código da lotação
+LabelCaption=Lotação
+LabelWidth=40
+Left=34
+Name=Edcodorganog
+Parent=GBLotacao
+PopupMenu=
+SpeedLookup=SLLotacao
+TabOrder=0
+Top=22
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idlocal
+EditWidth=52
+FindDataSet=QRAT007
+FindField=codlocal
+FindModified=True
+FindRequired=True
+HelpContext=149
+Hint=Local de trabalho
+LabelCaption=Local Trabalho
+LabelWidth=72
+Left=2
+Name=Edcodlocal
+Parent=GBLotacao
+PopupMenu=
+SpeedLookup=SLLocal
+TabOrder=4
+Top=80
+
+[TPanelEdit]
+EditColor=BtnFace
+EditDataSource=DSRAT010
+EditDataField=datadeopcao
+EditWidth=72
+Enabled=False
+HelpContext=155
+Hint=Data da opção
+LabelCaption=Opção FGTS
+LabelWidth=64
+Left=189
+Name=Eddatadeopcao
+Parent=GBRec
+PopupMenu=
+SpeedLookup=WCBDataOpcao
+TabOrder=3
+Top=67
+
+[TPanelEdit]
+EditColor=BtnFace
+EditDataSource=DSRAT010
+EditDataField=nocontafgts
+EditWidth=96
+Enabled=False
+HelpContext=157
+Hint=Número da conta do funcionário para depósito do FGTS
+LabelCaption=Conta
+LabelWidth=32
+Left=431
+Name=Ednocontafgts
+Parent=GBRec
+PopupMenu=
+TabOrder=4
+Top=67
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idagencia
+EditWidth=52
+FindDataSet=QRXT005
+FindField=nrobanco
+FindModified=True
+FindRequired=True
+HelpContext=152
+Hint=Código do banco para pagamento de salários
+LabelCaption=Banco
+LabelWidth=32
+Left=43
+Name=Edcodbanco
+Parent=GBPagto
+PopupMenu=
+SpeedLookup=SLBanco
+TabOrder=1
+Top=41
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idagencia
+EditWidth=52
+FindDataSet=QRXT006
+FindField=codagencia
+FindModified=True
+FindRequired=True
+HelpContext=153
+Hint=Código da agência para pagamento de salários
+LabelCaption=Agência
+LabelWidth=40
+Left=35
+Name=Edcodagencia
+Parent=GBPagto
+PopupMenu=
+SpeedLookup=SLAgencia
+TabOrder=2
+Top=67
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=numccorrent
+EditWidth=96
+HelpContext=154
+Hint=Número da conta corrente do funcionário para depósito de pagamentos
+LabelCaption=Conta Corrente
+LabelWidth=72
+Left=392
+Name=Ednumccorrent
+Parent=GBPagto
+PopupMenu=
+TabOrder=4
+Top=74
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=categsefip
+EditWidth=52
+FindDataSet=QRXT001j
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=1369
+Hint=Código da categoria do trabalhador para a SEFIP
+LabelCaption=Categoria
+LabelWidth=48
+Left=29
+Name=Edcategsefip
+Parent=GBRec
+PopupMenu=
+SpeedLookup=SpeedLookup3
+TabOrder=0
+Top=15
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=agentnociv
+EditWidth=52
+FindDataSet=QRXT001k
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=159
+Hint=Código de agente nocivo para a SEFIP
+LabelCaption=Agen Nocivo
+LabelWidth=64
+Left=13
+Name=Edagentnociv
+Parent=GBRec
+PopupMenu=
+SpeedLookup=SLAgente
+TabOrder=1
+Top=41
+
+[TSpeedLookup]
+FieldLookup=idfuncionario
+FieldLink=idfuncionario
+Glyph=Lanterna.bmp
+Height=21
+Left=141
+Name=SLMatricula
+NumGlyphs=2
+ObjectLink=RAL00900
+Parent=GroupContrib
+QueryLookup=QRAT009
+QueryLink=QRAT010
+Top=53
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idempresp
+FieldLink=idempresp
+Glyph=Lanterna.bmp
+Height=21
+Left=141
+Name=SLSindicato
+NumGlyphs=2
+ObjectLink=RXL01400
+Parent=GBLotacao
+QueryLookup=QRXT014
+QueryLink=QRAT010
+Top=137
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idcargo
+FieldLink=idcargo
+Glyph=Lanterna.bmp
+Height=21
+Left=141
+Name=SLCargo
+NumGlyphs=2
+ObjectLink=RAL00100
+Parent=GroupContrib
+QueryLookup=QRAT001
+QueryLink=QRAT010
+Top=108
+Width=22
+
+[TSpeedLookup]
+FieldLookup=idtabdiv
+FieldLink=grupoproc
+Glyph=Lanterna.bmp
+Height=21
+Left=142
+Name=SLGrpProcess
+NumGlyphs=2
+ObjectLink=RXL00100
+Parent=GBPagto
+QueryLookup=QRXT001e
+QueryLink=QRAT010
+Top=95
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idpadrao
+FieldLink=idpadrao
+Glyph=Lanterna.bmp
+Height=21
+Left=142
+Name=SLCodPadrao
+NumGlyphs=2
+ObjectLink=RAL00201
+Parent=GroupContrib
+QueryLookup=QRAT002
+QueryLink=QRAT010
+Top=162
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idunidorc
+FieldLink=idlotacao
+Glyph=Lanterna.bmp
+Height=21
+Left=165
+Name=SLLotacao
+NumGlyphs=2
+ObjectLink=RAL00800
+Parent=GBLotacao
+QueryLookup=QRAT008A
+QueryLink=QRAT010
+Top=23
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idlocal
+FieldLink=idlocal
+Glyph=Lanterna.bmp
+Height=21
+Left=141
+Name=SLLocal
+NumGlyphs=2
+ObjectLink=RAL00700
+Parent=GBLotacao
+QueryLookup=QRAT007
+QueryLink=QRAT010
+Top=81
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idbanco
+Glyph=Lanterna.bmp
+Height=21
+Left=142
+Name=SLBanco
+NumGlyphs=2
+ObjectLink=RXL00500
+Parent=GBPagto
+QueryLookup=QRXT005
+Top=41
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idagencia
+FieldLink=idagencia
+Glyph=Lanterna.bmp
+Height=21
+Left=164
+Name=SLAgencia
+NumGlyphs=2
+ObjectLink=RXL00600
+Parent=GBPagto
+QueryLookup=QRXT006
+QueryLink=QRAT010
+Top=68
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idtabdiv
+FieldLink=agentnociv
+Glyph=Lanterna.bmp
+Height=21
+Left=145
+Name=SLAgente
+NumGlyphs=2
+ObjectLink=RXL00100
+Parent=GBRec
+QueryLookup=QRXT001k
+QueryLink=QRAT010
+Top=41
+Width=21
+
+[TDBText]
+AutoSize=False
+DataField=descrreduz
+DataSource=DSRXT001a
+Height=17
+Left=141
+Name=DBTVincEmprega
+Parent=GroupContrib
+Top=301
+Width=258
+
+[TDBText]
+AutoSize=False
+DataField=razaosocial
+DataSource=DSRXT014
+Height=17
+Left=166
+Name=DBTSindicato
+Parent=GBLotacao
+Top=141
+Width=250
+
+[TDBText]
+AutoSize=False
+DataField=descargo
+DataSource=DSRAT001
+Height=17
+Left=166
+Name=DBTCargo
+Parent=GroupContrib
+Top=111
+Width=231
+
+[TDBText]
+AutoSize=False
+DataField=descrreduz
+DataSource=DSRXT001c
+Height=17
+Left=142
+Name=DBTCatFun
+Parent=GroupContrib
+Top=245
+Width=282
+
+[TDBText]
+AutoSize=False
+DataField=descrreduz
+DataSource=DSRXT001e
+Height=17
+Left=167
+Name=DBTGrpProcess
+Parent=GBPagto
+Top=99
+Width=200
+
+[TDBText]
+AutoSize=False
+DataField=descrreduz
+DataSource=DSRXT001f
+Height=17
+Left=167
+Name=DBTTipSal
+Parent=GroupContrib
+Top=330
+Width=239
+
+[TDBText]
+AutoSize=False
+DataField=despadrao
+DataSource=DSRAT002
+Height=18
+Left=165
+Name=DBTPadrao
+Parent=GroupContrib
+Top=167
+Width=187
+
+[TDBText]
+AutoSize=False
+DataField=descrreduz
+DataSource=DSRXT001h
+Height=17
+Left=166
+Name=DBTCAGED
+Parent=GroupContrib
+Top=274
+Width=235
+
+[TDBText]
+AutoSize=False
+DataField=descsubunidade
+DataSource=DSRAT008A
+Height=17
+Left=215
+Name=DBTdescsecao
+Parent=GBLotacao
+Top=26
+Width=250
+
+[TDBText]
+AutoSize=False
+DataField=deslocal
+DataSource=DSRAT007
+Height=17
+Left=165
+Name=DBTLocTrab
+Parent=GBLotacao
+Top=83
+Width=349
+
+[TDBText]
+AutoSize=False
+DataField=nomereduzid
+DataSource=DSRXT005
+Height=17
+Left=165
+Name=DBTBanco
+Parent=GBPagto
+Top=44
+Width=377
+
+[TDBText]
+AutoSize=False
+DataField=descagen
+DataSource=DSRXT006
+Height=18
+Left=188
+Name=DBTAgencia
+Parent=GBPagto
+Top=71
+Width=207
+
+[TDBText]
+AutoSize=False
+DataField=descrreduz
+DataSource=DSRXT001j
+Height=17
+Left=168
+Name=DBTCategoria
+Parent=GBRec
+Top=18
+Width=250
+
+[TDBText]
+AutoSize=False
+DataField=descrreduz
+DataSource=DSRXT001k
+Height=17
+Left=169
+Name=DBTAgente
+Parent=GBRec
+Top=44
+Width=402
+
+[TSpeedLookup]
+FieldLookup=idtabdiv
+FieldLink=regimejur
+Glyph=Lanterna.bmp
+Height=21
+Left=141
+Name=SLRegime
+NumGlyphs=2
+ObjectLink=RXL00100
+Parent=GroupContrib
+QueryLookup=QRXT001n
+QueryLink=QRAT010
+Top=81
+Width=22
+
+[TDBText]
+AutoSize=False
+DataField=descrnormal
+DataSource=DSRXT001n
+Height=17
+Left=165
+Name=DBTRegJur
+Parent=GroupContrib
+Top=84
+Width=246
+
+[TDBText]
+AutoSize=False
+DataField=descrreduz
+DataSource=DSRXT001o
+Height=17
+Left=166
+Name=DBTTipoAdm
+Parent=GroupContrib
+Top=220
+Width=237
+
+[TProcedure]
+Name=ProcCampos
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=Eddatadmissao
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar calendário
+Left=553
+Name=WCalButton
+NumGlyphs=1
+Parent=GroupContrib
+Top=270
+Width=21
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=Eddatanomeaca
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar calendário
+Left=553
+Name=WCalButton1
+NumGlyphs=1
+Parent=GroupContrib
+Top=216
+Width=21
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=Eddatadeposse
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar calendário
+Left=553
+Name=WCalButton2
+NumGlyphs=1
+Parent=GroupContrib
+Top=243
+Width=21
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=Eddatainiexerc
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar calendário
+Left=159
+Name=WCInicio
+NumGlyphs=1
+Parent=GBVigencia
+Top=24
+Width=21
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=EdDatEncerra
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar calendário
+Left=412
+Name=WCEncerra
+NumGlyphs=1
+Parent=GBVigencia
+Top=52
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idchapeira
+FieldLink=idchapeira
+Glyph=Lanterna.bmp
+Height=21
+Left=143
+Name=SLChapeira
+NumGlyphs=2
+ObjectLink=RAL00500
+Parent=GBPonto
+QueryLookup=QRAT005
+QueryLink=QRAT010
+Top=41
+Width=21
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=Eddatadeopcao
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar calendário
+Left=339
+Name=WCBDataOpcao
+NumGlyphs=1
+Parent=GBRec
+Top=67
+Width=21
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=numcontrato
+EditWidth=36
+HelpContext=158
+Hint=Número do contrato de trabalho
+LabelCaption=
+LabelWidth=0
+Left=529
+Name=Ednumcontrato
+Parent=GroupContrib
+PopupMenu=
+TabOrder=3
+Top=52
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=descontrato
+EditWidth=292
+HelpContext=122
+Hint=Definição do contrato
+LabelCaption=Descrição
+LabelWidth=52
+Left=23
+Name=Eddescontrato
+Parent=GroupContrib
+PopupMenu=
+TabOrder=10
+Top=134
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=horasemcont
+EditWidth=40
+HelpContext=135
+Hint=Número de horas semanais contratuais
+LabelCaption=Horas Semanais
+LabelWidth=80
+Left=302
+Name=Edhorasemcont1
+Parent=GBPonto
+PopupMenu=
+TabOrder=2
+Top=15
+
+[TwwDBComboBox]
+DataField=tipodeponto
+DataSource=DSRAT010
+Height=21
+HelpContext=142
+Hint=Tipo de ponto
+Items
+   Cartão,C
+   Ficha,F
+   Livre,L
+   Outros,O
+   Crachá,R
+   Livro,V
+   Biometria,B
+Left=89
+MapList=True
+Name=DBCBtipodeponto
+Parent=GBPonto
+TabOrder=0
+Top=15
+Width=76
+
+[TLabel]
+Alignment=Right
+Caption=Tipo
+Height=13
+Left=64
+Name=Label2
+Parent=GBPonto
+Top=18
+Width=21
+
+[TDBText]
+AutoSize=False
+DataField=deslocal
+DataSource=DSRAT005
+Height=17
+Left=168
+Name=DBTChapeira
+Parent=GBPonto
+Top=46
+Width=268
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=numcracha
+EditWidth=48
+HelpContext=145
+Hint=Número do crachá
+LabelCaption=Crachá
+LabelWidth=36
+Left=478
+Name=Ednumcracha1
+Parent=GBPonto
+PopupMenu=
+TabOrder=7
+Top=68
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idunidorcaux
+EditWidth=76
+FindDataSet=QRAT008
+FindField=codorganog
+FindModified=True
+FindRequired=True
+HelpContext=150
+Hint=Código da unidade orçamentária para custeio
+LabelCaption=Custeio
+LabelWidth=36
+Left=38
+Name=EdUnidOrc
+Parent=GBLotacao
+PopupMenu=
+SpeedLookup=SLUnidOrc
+TabOrder=3
+Top=51
+
+[TDBText]
+AutoSize=False
+DataField=descsubunidade
+DataSource=DSRAT008
+Height=17
+Left=214
+Name=DBTdescsubunidade
+Parent=GBLotacao
+Top=55
+Width=250
+
+[TSpeedLookup]
+FieldLookup=idunidorc
+FieldLink=idunidorcaux
+Glyph=Lanterna.bmp
+Height=21
+Left=165
+Name=SLUnidOrc
+NumGlyphs=2
+ObjectLink=RAL00800
+Parent=GBLotacao
+QueryLookup=QRAT008
+QueryLink=QRAT010
+Top=52
+Width=21
+
+[TStatusBar]
+Height=23
+Name=StatusBar
+Parent=Form
+Top=501
+Width=613
+
+[TLabel]
+Alignment=Left
+AutoSize=False
+Caption=Mensagem
+Height=13
+Left=8
+Name=LHint
+Parent=StatusBar
+Top=5
+Width=527
+
+[TProcedure]
+Name=Proc_Idade
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRXT006
+EditDataField=digagencia
+EditWidth=20
+Enabled=False
+HelpContext=1367
+LabelCaption=
+LabelWidth=0
+Left=141
+Name=Eddigagencia
+Parent=GBPagto
+PopupMenu=
+TabOrder=3
+Top=67
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idug
+EditWidth=52
+FindDataSet=QRXT008
+FindField=codigoug
+FindModified=True
+FindRequired=True
+HelpContext=147
+Hint=Código da unidade gestora
+LabelCaption=Unid Gestora
+LabelWidth=64
+Left=10
+Name=Edcodigoug
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=SLug
+TabOrder=0
+Top=24
+
+[TDBText]
+AutoSize=False
+DataField=nomeug
+DataSource=DSRXT008
+Height=17
+Left=165
+Name=DBTnomeug
+Parent=GroupContrib
+Top=29
+Width=227
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=seqcalculo
+EditWidth=52
+HelpContext=126
+Hint=Sequência de Cálculo
+LabelCaption=Seq Cálculo
+LabelWidth=60
+Left=398
+Name=Edseqcalculo
+Parent=GroupContrib
+PopupMenu=
+TabOrder=22
+Top=189
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idhorario
+EditWidth=52
+FindDataSet=QRAT013
+FindField=codhoratrab
+FindModified=True
+FindRequired=True
+HelpContext=146
+Hint=Código do horário de trabalho
+LabelCaption=Horário
+LabelWidth=36
+Left=41
+Name=Edcodhoratrab
+Parent=GBPonto
+PopupMenu=
+SpeedLookup=SHorario
+TabOrder=6
+Top=67
+
+[TDBText]
+AutoSize=False
+DataField=deshoratrab
+DataSource=DSRAT013
+Height=17
+Left=169
+Name=DBText
+Parent=GBPonto
+Top=71
+Width=250
+
+[TSpeedLookup]
+FieldLookup=idhorario
+FieldLink=idhorario
+Glyph=Lanterna.bmp
+Height=21
+Left=143
+Name=SHorario
+NumGlyphs=2
+ObjectLink=RAL01300
+Parent=GBPonto
+QueryLookup=QRAT013
+QueryLink=QRAT010
+Top=67
+Width=21
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRFT025
+EditDataField=descrreduz
+EditWidth=52
+Enabled=False
+FindModified=True
+FindRequired=True
+HelpContext=1365
+Hint=Código do Regime Previdenciário (RGPS/RPPS)
+LabelCaption=Reg Previdên
+LabelWidth=68
+Left=6
+Name=Edcodpagto
+Parent=GroupContrib
+PopupMenu=
+TabOrder=24
+Top=353
+
+[TDBText]
+AutoSize=False
+DataField=descrnormal
+DataSource=DSRFT025
+Height=17
+Left=142
+Name=DBText1
+Parent=GroupContrib
+Top=357
+Width=229
+
+[TBitBtn]
+Glyph=ORGANOGRAMA.BMP
+Height=21
+HelpContext=0
+Left=188
+Name=SBLlotacao
+NumGlyphs=2
+Parent=GBLotacao
+PopupMenu=
+TabOrder=1
+TabStop=False
+Top=20
+Width=21
+
+[TBitBtn]
+Glyph=ORGANOGRAMA.BMP
+Height=21
+HelpContext=0
+Left=188
+Name=SBUnidOrc
+NumGlyphs=2
+Parent=GBLotacao
+PopupMenu=
+TabOrder=2
+TabStop=False
+Top=52
+Width=21
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idatoadmin
+EditWidth=52
+FindDataSet=QRAT023
+FindField=numatoadmin
+FindModified=True
+FindRequired=True
+HelpContext=165
+Hint=Ato Nomeação
+LabelCaption=Número Ato
+LabelWidth=60
+Left=2
+Name=Ednumatoadmin
+Parent=GBAtos
+PopupMenu=
+TabOrder=0
+Top=15
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idatoadmin
+EditWidth=52
+FindDataSet=QRAT023
+FindField=exercicio
+FindModified=True
+FindRequired=True
+HelpContext=166
+Hint=Exercício do ato
+LabelCaption=/
+LabelWidth=8
+Left=125
+Name=Edexercicio
+Parent=GBAtos
+PopupMenu=
+TabOrder=1
+Top=15
+
+[TSpeedLookup]
+FieldLookup=idatoadmin
+FieldLink=idatoadmin
+Glyph=Lanterna.bmp
+Height=21
+Left=201
+Name=SpeedLookup2
+NumGlyphs=2
+ObjectLink=RAL02300
+Parent=GBAtos
+QueryLookup=QRAT023
+QueryLink=QRAT010
+Top=15
+Width=21
+
+[TDBText]
+AutoSize=False
+DataField=datatoadmin
+DataSource=DSRAT023
+Height=17
+Left=228
+Name=DBText2
+Parent=GBAtos
+Top=18
+Width=65
+
+[TTabSheet]
+Caption=Outras &Informações
+Height=438
+HelpContext=0
+Left=4
+Name=TabSheet
+PageControl=Pgc
+PageIndex=3
+TabStop=False
+Top=24
+Width=605
+
+[TGroupBox]
+Align=Client
+Caption=
+Height=438
+HelpContext=0
+Left=0
+Name=GBoutras
+Parent=TabSheet
+TabOrder=0
+TabStop=False
+Top=0
+Width=605
+
+[TLabel]
+Alignment=Right
+Caption=Tipo
+Height=13
+Left=61
+Name=Label1
+Parent=GBPagto
+Top=18
+Width=21
+
+[TwwDBComboBox]
+DataField=tipopagto
+DataSource=DSRAT010
+Height=21
+HelpContext=0
+Hint=Tipo de pagamento
+Items
+   Cheque,1
+   Depósito,2
+   Caixa,3
+Left=87
+MapList=True
+Name=CBXtipopagto
+Parent=GBPagto
+TabOrder=0
+Top=15
+Width=88
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=nroregistro
+EditWidth=52
+HelpContext=121
+Hint=Número do registro do funcionário
+LabelCaption=Nro. Registro
+LabelWidth=64
+Left=394
+Name=Ednroregistro
+Parent=GroupContrib
+PopupMenu=
+TabOrder=7
+Top=81
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT010
+EditDataField=diascontrato
+EditWidth=40
+Enabled=False
+HelpContext=132
+Hint=Quantidade de dias do contrato com prazo determinado
+LabelCaption=Tempo
+LabelWidth=36
+Left=288
+Name=Eddiascontrato
+Parent=GBVigencia
+PopupMenu=
+TabOrder=1
+Top=24
+
+[TSpeedLookup]
+FieldLookup=idug
+FieldLink=idug
+Glyph=Lanterna.bmp
+Height=21
+Left=141
+Name=SLug
+NumGlyphs=2
+ObjectLink=RXL00800
+Parent=GroupContrib
+QueryLookup=QRXT008
+QueryLink=QRAT010
+Top=25
+Width=21
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=
+EditWidth=80
+Enabled=False
+HelpContext=1366
+LabelCaption=Valor
+LabelWidth=28
+Left=430
+Name=Edvalor
+Parent=GroupContrib
+PopupMenu=
+TabOrder=20
+Top=161
+
+[TGroupBox]
+Caption=Lotação e Custeio
+Height=170
+HelpContext=0
+Left=8
+Name=GBLotacao
+Parent=GBLotCus
+TabOrder=0
+TabStop=False
+Top=18
+Width=585
+
+[TGroupBox]
+Caption=Ponto
+Height=97
+HelpContext=0
+Left=10
+Name=GBPonto
+Parent=GPPagRec
+TabOrder=0
+TabStop=False
+Top=18
+Width=585
+
+[TGroupBox]
+Caption=Contratação Temporária
+Height=84
+HelpContext=0
+Left=10
+Name=GBTemporaria
+Parent=GBLotCus
+TabOrder=1
+TabStop=False
+Top=201
+Width=583
+
+[TGroupBox]
+Caption=Recolhimento
+Height=123
+HelpContext=0
+Left=11
+Name=GBRec
+Parent=GPPagRec
+TabOrder=2
+TabStop=False
+Top=271
+Width=585
+
+[TGroupBox]
+Caption=Concurso Público
+Height=113
+HelpContext=0
+Left=5
+Name=GBConcurso
+Parent=GBoutras
+TabOrder=0
+TabStop=False
+Top=11
+Width=591
+
+[TGroupBox]
+Caption=Ato Nomeação
+Height=40
+HelpContext=0
+Left=5
+Name=GBAtos
+Parent=GBoutras
+TabOrder=1
+TabStop=False
+Top=125
+Width=301
+
+[TGroupBox]
+Caption=Estágio Probatório
+Height=40
+HelpContext=0
+Left=311
+Name=GBEstProbatorio
+Parent=GBoutras
+TabOrder=2
+TabStop=False
+Top=125
+Width=285
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT010
+EditDataField=fimestagio
+EditWidth=80
+Enabled=False
+HelpContext=0
+LabelCaption=Término
+LabelWidth=40
+Left=137
+Name=Edfimestagio
+Parent=GBEstProbatorio
+PopupMenu=
+TabOrder=0
+Top=15
+
+[TGroupBox]
+Caption=Pagamento
+Height=125
+HelpContext=0
+Left=11
+Name=GBPagto
+Parent=GPPagRec
+TabOrder=1
+TabStop=False
+Top=129
+Width=585
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditWidth=52
+FindDataSet=QRAT092
+FindField=codfonterecurso
+FindModified=True
+FindRequired=True
+HelpContext=1534
+Hint=Código da Fonte de Recurso para Custeio do Servidor
+LabelCaption=Fonte Recurso
+LabelWidth=72
+Left=2
+Name=Edrecurso
+Parent=GBLotacao
+PopupMenu=
+SpeedLookup=SBRecurso
+TabOrder=5
+Top=109
+
+[TSpeedLookup]
+FieldLookup=idfonterecurso
+FieldLink=idfonterecurso
+Glyph=Lanterna.bmp
+Height=21
+Left=141
+Name=SBRecurso
+NumGlyphs=2
+ObjectLink=RAL09200
+Parent=GBLotacao
+QueryLookup=QRAT092
+QueryLink=QRAT010
+Top=110
+Width=21
+
+[TDBText]
+AutoSize=False
+DataField=desfonterecurso
+DataSource=DSRAT092
+Height=17
+Left=164
+Name=DBText3
+Parent=GBLotacao
+Top=111
+Width=292
+
+[TGroupBox]
+Caption=Situação Atual
+Height=64
+HelpContext=0
+Left=5
+Name=GBSituacao
+Parent=GBoutras
+TabOrder=3
+TabStop=False
+Top=168
+Width=301
+
+[TGroupBox]
+Caption=Últimas Férias
+Height=64
+HelpContext=0
+Left=311
+Name=GBFerias
+Parent=GBoutras
+TabOrder=4
+TabStop=False
+Top=168
+Width=285
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=
+EditWidth=48
+Enabled=False
+HelpContext=1539
+LabelCaption=Código
+LabelWidth=36
+Left=8
+Name=Edcodausencia
+Parent=GBSituacao
+PopupMenu=
+TabOrder=0
+Top=16
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT010
+EditDataField=datasaida
+EditWidth=80
+Enabled=False
+HelpContext=1540
+LabelCaption=Período
+LabelWidth=40
+Left=4
+Name=Edinicio
+Parent=GBSituacao
+PopupMenu=
+TabOrder=1
+Top=40
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditWidth=100
+HelpContext=0
+LabelCaption=TlPanelEdit1
+LabelWidth=64
+Left=316
+Name=PanelEdit1
+PopupMenu=
+TabOrder=-1
+Top=0
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditWidth=100
+HelpContext=0
+LabelCaption=TlPanelEdit2
+LabelWidth=64
+Left=260
+Name=PanelEdit2
+PopupMenu=
+TabOrder=-1
+Top=0
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT010
+EditDataField=dataretorno
+EditWidth=80
+Enabled=False
+HelpContext=1541
+LabelCaption=à
+LabelWidth=8
+Left=138
+Name=EdTermino
+Parent=GBSituacao
+PopupMenu=
+TabOrder=2
+Top=39
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT010
+EditDataField=datainifer
+EditWidth=80
+Enabled=False
+HelpContext=1542
+LabelCaption=Início
+LabelWidth=28
+Left=12
+Name=EdFerIni
+Parent=GBFerias
+PopupMenu=
+TabOrder=0
+Top=17
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT010
+EditDataField=datafimfer
+EditWidth=80
+Enabled=False
+HelpContext=1543
+LabelCaption=Término
+LabelWidth=40
+Left=135
+Name=EdFerFim
+Parent=GBFerias
+PopupMenu=
+TabOrder=1
+Top=16
+
+[TLabel]
+Alignment=Left
+AutoSize=False
+Caption=TRABALHANDO
+Height=17
+Left=112
+Name=LSituacao
+Parent=GBSituacao
+Top=16
+Width=184
+
+[TSpeedLookup]
+FieldLookup=idtabdiv
+FieldLink=categsefip
+Glyph=Lanterna.bmp
+Height=21
+Left=144
+Name=SpeedLookup3
+NumGlyphs=2
+ObjectLink=RXL00100
+Parent=GBRec
+QueryLookup=QRXT001j
+QueryLink=QRAT010
+Top=15
+Width=21
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=nroedital
+EditWidth=100
+HelpContext=1537
+Hint=Número do Edital
+LabelCaption=Nro Edital
+LabelWidth=48
+Left=25
+Name=EdEdital
+Parent=GBConcurso
+PopupMenu=
+TabOrder=0
+Top=16
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=numconcurso
+EditWidth=84
+HelpContext=160
+Hint=Número do consurso
+LabelCaption=Nro Concurso
+LabelWidth=68
+Left=212
+Name=Ednumconcurso
+Parent=GBConcurso
+PopupMenu=
+TabOrder=1
+Top=17
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=classificac
+EditWidth=84
+HelpContext=162
+Hint=Classificação no concurso
+LabelCaption=Classificação
+LabelWidth=64
+Left=398
+Name=Edclassificac
+Parent=GBConcurso
+PopupMenu=
+TabOrder=2
+Top=17
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=dataedital
+EditWidth=80
+HelpContext=1538
+Hint=Data do Edital
+LabelCaption=Data Edital
+LabelWidth=56
+Left=17
+Name=EdDataEdital
+Parent=GBConcurso
+PopupMenu=
+SpeedLookup=WCalButton5
+TabOrder=3
+Top=39
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=EdDataEdital
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar calendário
+Left=168
+Name=WCalButton5
+NumGlyphs=1
+Parent=GBConcurso
+Top=39
+Width=21
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=numinscrica
+EditWidth=84
+HelpContext=161
+Hint=Código da inscrição no concurso
+LabelCaption=Código Inscrição
+LabelWidth=80
+Left=200
+Name=Ednuminscrica
+Parent=GBConcurso
+PopupMenu=
+TabOrder=4
+Top=40
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=dataprorconcurso
+EditWidth=84
+HelpContext=0
+Hint=Data de prorrogação do concurso.
+LabelCaption=Prorrogação
+LabelWidth=60
+Left=402
+Name=EDProrrogacao
+Parent=GBConcurso
+PopupMenu=
+SpeedLookup=WCProrrogacao
+TabOrder=5
+Top=40
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=EDProrrogacao
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar Calendário
+Left=563
+Name=WCProrrogacao
+NumGlyphs=1
+Parent=GBConcurso
+Top=41
+Width=21
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=consreg
+EditWidth=52
+FindDataSet=QRXT001i
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=163
+Hint=Código do conselho regional
+LabelCaption=Con Regional
+LabelWidth=68
+Left=5
+Name=Edconsreg
+Parent=GBConcurso
+PopupMenu=
+SpeedLookup=SLConsReg
+TabOrder=6
+Top=62
+
+[TSpeedLookup]
+FieldLookup=idtabdiv
+FieldLink=consreg
+Glyph=Lanterna.bmp
+Height=21
+Left=140
+Name=SLConsReg
+NumGlyphs=2
+ObjectLink=RXL00100
+Parent=GBConcurso
+QueryLookup=QRXT001i
+QueryLink=QRAT010
+Top=63
+Width=23
+
+[TDBText]
+AutoSize=False
+DataField=descrnormal
+DataSource=DSRXT001i
+Height=17
+Left=170
+Name=DBTConsReg
+Parent=GBConcurso
+Top=68
+Width=383
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=nroconsreg
+EditWidth=88
+HelpContext=164
+Hint=Número de inscrição no Conselho Regional
+LabelCaption=Inscrição
+LabelWidth=44
+Left=29
+Name=Ednroconsreg
+Parent=GBConcurso
+PopupMenu=
+TabOrder=7
+Top=86
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=dtexpconsreg
+EditWidth=84
+HelpContext=0
+Hint=Data de expedição do registro no Conselho Regional
+LabelCaption=Expedição
+LabelWidth=52
+Left=228
+Name=Eddtexpconsreg
+Parent=GBConcurso
+PopupMenu=
+SpeedLookup=WCalButton4
+TabOrder=8
+Top=87
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=Eddtexpconsreg
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar Calendário
+Left=381
+Name=WCalButton4
+NumGlyphs=1
+Parent=GBConcurso
+Top=88
+Width=21
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=dtvctoconsreg
+EditWidth=84
+HelpContext=0
+Hint=Data de vencimento do registro no Conselho Regional
+LabelCaption=Vencimento
+LabelWidth=60
+Left=402
+Name=Eddtvctoconsreg
+Parent=GBConcurso
+PopupMenu=
+SpeedLookup=WCalButton6
+TabOrder=9
+Top=87
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=Eddtvctoconsreg
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar Calendário
+Left=563
+Name=WCalButton6
+NumGlyphs=1
+Parent=GBConcurso
+Top=88
+Width=21
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT009
+EditDataField=matricfunci
+EditWidth=52
+Enabled=False
+HelpContext=156
+LabelCaption=Funcional
+LabelWidth=48
+Left=410
+Name=Edfuncional
+Parent=GroupContrib
+PopupMenu=
+TabOrder=5
+Top=52
+
+[TDBText]
+AutoSize=False
+DataField=nomefunciona
+DataSource=DSRAT009
+Height=18
+Left=164
+Name=DBText4
+Parent=GroupContrib
+Top=56
+Width=267
+
+[TLabel]
+Alignment=Right
+AutoSize=False
+Caption=.
+Height=17
+Left=521
+Name=Label
+Parent=GroupContrib
+Top=51
+Width=6
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=datacadastro
+EditWidth=80
+HelpContext=1368
+LabelCaption=Data Cadastro
+LabelWidth=72
+Left=386
+Name=EdataCadastro
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=WCDadastro
+TabOrder=11
+Top=133
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=EdataCadastro
+Glyph=Calend.bmp
+Height=22
+Hint=Consultar calendário
+Left=553
+Name=WCDadastro
+NumGlyphs=1
+Parent=GroupContrib
+Top=132
+Width=21
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=codpadraoadm
+EditWidth=52
+FindDataSet=QRAT093
+FindField=codpadraoadm
+FindModified=True
+FindRequired=True
+HelpContext=124
+Hint=Código do Padrão de Admissão
+LabelCaption=Padrão Adm
+LabelWidth=60
+Left=14
+Name=EdpadAdmissao
+Parent=GroupContrib
+PopupMenu=
+SpeedLookup=SBPadrao
+TabOrder=13
+Top=188
+
+[TSpeedLookup]
+FieldLookup=idpadraoadm
+FieldLink=idpadraoadm
+Glyph=Lanterna.bmp
+Height=21
+Left=142
+Name=SBPadrao
+NumGlyphs=2
+ObjectLink=RAL09300
+Parent=GroupContrib
+QueryLookup=QRAT093
+QueryLink=QRAT010
+Top=189
+Width=21
+
+[TDBText]
+AutoSize=False
+DataField=despadraoadm
+DataSource=DSRAT093
+Height=17
+Left=166
+Name=DBText5
+Parent=GroupContrib
+Top=193
+Width=235
+
+[TDBCheckBox]
+Alignment=Left
+Caption=
+DataField=opcaodefgts
+DataSource=DSRAT010
+Enabled=False
+Height=15
+HelpContext=1533
+Left=469
+Name=DBFgts
+Parent=GroupContrib
+ReadOnly=False
+TabOrder=27
+Top=356
+ValueChecked=S
+ValueUnChecked=N
+Width=13
+
+[TDBCheckBox]
+Alignment=Left
+Caption=
+DataField=temfrequencia
+DataSource=DSRAT093
+Enabled=False
+Height=15
+HelpContext=1532
+Left=469
+Name=DBFreq
+Parent=GroupContrib
+ReadOnly=False
+TabOrder=26
+Top=331
+ValueChecked=S
+ValueUnChecked=N
+Width=13
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT010
+EditDataField=horamencont
+EditWidth=48
+Enabled=False
+HelpContext=1535
+LabelCaption=Horas Mensais
+LabelWidth=72
+Left=442
+Name=EdHorasMens
+Parent=GBPonto
+PopupMenu=
+TabOrder=3
+Top=16
+
+[TLabel]
+Alignment=Right
+Caption=Convidado
+Height=13
+Left=415
+Name=Label3
+Parent=GroupContrib
+Top=303
+Width=51
+
+[TLabel]
+Alignment=Right
+Caption=Frequência
+Height=13
+Left=411
+Name=Label4
+Parent=GroupContrib
+Top=331
+Width=53
+
+[TLabel]
+Alignment=Right
+AutoSize=False
+Caption=Tem Fgts
+Height=13
+Left=418
+Name=Label5
+Parent=GroupContrib
+Top=356
+Width=47
+
+[TDBCheckBox]
+Alignment=Left
+Caption=Férias Coletiva
+DataField=feriascoletiva
+DataSource=DSRAT010
+Enabled=False
+Height=15
+HelpContext=1544
+Hint=Férias Coletiva
+Left=40
+Name=DBFeriasColet
+Parent=GBFerias
+ReadOnly=False
+TabOrder=2
+Top=45
+ValueChecked=S
+ValueUnChecked=N
+Width=92
+
+[TDBCheckBox]
+Alignment=Left
+Caption=Poupança
+DataField=poupanca
+DataSource=DSRAT010
+Height=15
+HelpContext=1536
+Hint=Indica se o nro da conta é de poupança ou não.
+Left=503
+Name=DBCpoupanca
+Parent=GBPagto
+ReadOnly=False
+TabOrder=7
+Top=104
+ValueChecked=1
+ValueUnChecked=0
+Width=70
+
+[TBitBtn]
+Caption=Ajuda
+Glyph=bbhelp
+Height=25
+HelpContext=0
+Left=5
+Name=BitBtn
+NumGlyphs=2
+Parent=Pn1
+PopupMenu=
+TabOrder=0
+TabStop=False
+Top=5
+Width=80
+
+[TDBMemo]
+Color=
+DataField=obs
+DataSource=DSRAT010
+Height=50
+HelpContext=0
+Hint=Anotações gerais sobre o contrato
+Left=96
+Name=DBObs
+Parent=GBoutras
+ScrollBars=Vertical
+TabOrder=7
+Tag=
+Top=298
+Width=497
+
+[TLabel]
+Alignment=Right
+Caption=Observação
+Height=13
+Left=35
+Name=Label6
+Parent=GBoutras
+Top=300
+Width=58
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=idlocal
+EditWidth=52
+FindDataSet=QRAT007a
+FindField=codlocal
+FindModified=True
+FindRequired=True
+HelpContext=0
+Hint=Local de origem do funcionários cedido
+LabelCaption=Local Origem
+LabelWidth=64
+Left=23
+Name=EdlocalOr
+Parent=GBoutras
+PopupMenu=
+SpeedLookup=SLLocOr
+TabOrder=5
+Top=238
+
+[TDBText]
+AutoSize=False
+DataField=deslocal
+DataSource=DSRAT007a
+Height=17
+Left=181
+Name=DBText6
+Parent=GBoutras
+Top=242
+Width=415
+
+[TSpeedLookup]
+FieldLookup=idlocal
+FieldLink=idlocalorigem
+Glyph=Lanterna.bmp
+Height=21
+Left=155
+Name=SLLocOr
+NumGlyphs=2
+ObjectLink=RAL00700
+Parent=GBoutras
+QueryLookup=QRAT007a
+QueryLink=QRAT010
+Top=238
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idtemporario
+FieldLink=idtemporario
+Glyph=Lanterna.bmp
+Height=21
+Left=171
+Name=SBProcesso
+NumGlyphs=2
+ObjectLink=RAL09600
+Parent=GBTemporaria
+QueryLookup=QRAT096
+QueryLink=QRAT010
+Top=24
+Width=21
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditWidth=80
+FindDataSet=QRAT096
+FindField=numprocesso
+FindModified=True
+FindRequired=True
+HelpContext=0
+Hint=Número do Processo da Contratação Temporária
+LabelCaption=Processo
+LabelWidth=48
+Left=27
+Name=EdProcesso
+Parent=GBTemporaria
+PopupMenu=
+SpeedLookup=SBProcesso
+TabOrder=0
+Top=24
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT096
+EditDataField=diasprorroga
+EditFont=Color=Red
+EditWidth=32
+Enabled=False
+HelpContext=0
+LabelCaption=Prorrogado por
+LabelWidth=72
+Left=267
+Name=Ediasprorroga
+Parent=GBTemporaria
+PopupMenu=
+TabOrder=5
+Top=54
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT096
+EditDataField=diasprocesso
+EditWidth=32
+Enabled=False
+HelpContext=0
+LabelCaption=Prazo
+LabelWidth=28
+Left=311
+Name=Ediasprocesso
+Parent=GBTemporaria
+PopupMenu=
+TabOrder=2
+Top=24
+
+[TGroupBox]
+Caption=Vigência Contrato Individual
+Height=82
+HelpContext=0
+Left=10
+Name=GBVigencia
+Parent=GBLotCus
+TabOrder=2
+TabStop=False
+Top=298
+Width=583
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT096
+EditDataField=dataprocesso
+EditWidth=64
+Enabled=False
+HelpContext=0
+LabelCaption=Data Processo
+LabelWidth=72
+Left=3
+Name=EdDescProc
+Parent=GBTemporaria
+PopupMenu=
+TabOrder=4
+Top=54
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT096
+EditDataField=datainicio
+EditWidth=72
+Enabled=False
+HelpContext=0
+LabelCaption=Início
+LabelWidth=28
+Left=192
+Name=Edatainicio
+Parent=GBTemporaria
+PopupMenu=
+TabOrder=1
+Top=25
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT096
+EditDataField=datatermino
+EditWidth=72
+Enabled=False
+HelpContext=0
+LabelCaption=Término
+LabelWidth=40
+Left=388
+Name=Edatatermino
+Parent=GBTemporaria
+PopupMenu=
+TabOrder=3
+Top=24
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT096
+EditDataField=dataprorroga
+EditFont=Color=Red
+EditWidth=72
+Enabled=False
+HelpContext=0
+LabelCaption=Até
+LabelWidth=20
+Left=408
+Name=Edataprorroga
+Parent=GBTemporaria
+PopupMenu=
+TabOrder=6
+Top=54
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=datafimcontrato
+EditWidth=72
+HelpContext=0
+Hint=Data de encerramento do contrato para regime de contratação temporária, considerando prorrogação
+LabelCaption=Encerra em
+LabelWidth=56
+Left=268
+Name=EdDatEncerra
+Parent=GBVigencia
+PopupMenu=
+SpeedLookup=WCEncerra
+TabOrder=3
+Top=52
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+FocusControl=Eddatafimcontrato
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar calendário
+Left=160
+Name=WCTermino
+NumGlyphs=1
+Parent=GBVigencia
+Top=53
+Width=21
+
+[TDBCheckBox]
+Alignment=Left
+Caption=Optante FGTS
+DataField=opcaodefgts
+DataSource=DSRAT010
+Enabled=False
+Height=15
+HelpContext=0
+Hint=Optante pelo Fundo de Garantia
+Left=12
+Name=DBOpFgts
+Parent=GBRec
+ReadOnly=False
+TabOrder=2
+Top=68
+ValueChecked=1
+ValueUnChecked=0
+Width=90
+
+[TSpeedLookup]
+FieldLookup=idtabdiv
+FieldLink=tipadmrais
+Glyph=Lanterna.bmp
+Height=21
+Left=142
+Name=SLTipAdm
+NumGlyphs=2
+ObjectLink=RXL00100
+Parent=GroupContrib
+QueryLookup=QRXT001o
+QueryLink=QRAT010
+Top=217
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idtabdiv
+FieldLink=tipadmcaged
+Glyph=Lanterna.bmp
+Height=21
+Left=140
+Name=SLCaged
+NumGlyphs=2
+ObjectLink=RXL00100
+Parent=GroupContrib
+QueryLookup=QRXT001h
+QueryLink=QRAT010
+Top=270
+Width=21
+
+[TSpeedLookup]
+FieldLookup=idtabdiv
+FieldLink=tiposalcont
+Glyph=Lanterna.bmp
+Height=21
+Left=142
+Name=SLTipoSal
+NumGlyphs=2
+ObjectLink=RXL00100
+Parent=GroupContrib
+QueryLookup=QRXT001f
+QueryLink=QRAT010
+Top=326
+Width=21
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT010
+EditDataField=exercicio
+EditWidth=52
+Enabled=False
+HelpContext=0
+LabelCaption=Exercicio
+LabelWidth=44
+Left=414
+Name=EdExerc
+Parent=GroupContrib
+PopupMenu=
+TabOrder=1
+Top=24
+
+[TWCalButton]
+AceitarDomingosFeriados=True
+ValidarData=True
+ControlFocus=True
+Enabled=False
+Glyph=Calend.bmp
+Height=21
+Hint=Consultar calendário
+Left=189
+Name=WCalButton3
+NumGlyphs=1
+Parent=DBObs
+Top=346
+Width=21
+
+[TDBCheckBox]
+Alignment=Left
+Caption=Cartão Salário
+DataField=cartaosalario
+DataSource=DSRAT010
+Height=15
+HelpContext=0
+Hint=Conta Cartão Salário
+Left=401
+Name=DBCartaoSal
+Parent=GBPagto
+ReadOnly=False
+TabOrder=6
+Top=104
+ValueChecked=1
+ValueUnChecked=0
+Width=88
+
+[TPanelEdit]
+EditColor=BtnFace
+EditDataSource=
+EditDataField=motivoagentepolitico
+EditWidth=52
+Enabled=False
+FindDataSet=QRXT001q
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=0
+Hint=Motivo para inexistência da Remuneração de AG Políticos
+LabelCaption=Mot.Inexist.Rem.
+LabelWidth=80
+Left=7
+Name=EdMotInexRem
+Parent=GBoutras
+PopupMenu=
+SpeedLookup=SLMotInexRem
+TabOrder=6
+Top=265
+
+[TSpeedLookup]
+FieldLookup=idtabdiv
+FieldLink=motivoagentepolitico
+Glyph=Lanterna.bmp
+Height=21
+Left=155
+Name=SLMotInexRem
+NumGlyphs=2
+ObjectLink=RXL00100
+Parent=GBoutras
+QueryLookup=QRXT001q
+QueryLink=QRAT010
+Top=266
+Width=21
+
+[TDBText]
+AutoSize=False
+DataField=descrnormal
+DataSource=DSRXT001q
+Height=17
+Left=181
+Name=DBText7
+Parent=GBoutras
+Top=266
+Width=410
+
+[TLabel]
+Alignment=Left
+Caption=caractere(s) restante(s).
+Height=13
+Left=483
+Name=Label7
+Parent=GBoutras
+Top=284
+Width=111
+
+[TLabel]
+Alignment=Right
+AutoSize=False
+Caption=500
+Height=17
+Left=461
+Name=lblCaractere
+Parent=GBoutras
+Top=284
+Width=19
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=
+EditWidth=124
+Enabled=False
+HelpContext=0
+LabelCaption=Macro Cargo
+LabelWidth=64
+Left=394
+Name=EdMacrocargo
+Parent=GroupContrib
+PopupMenu=
+TabOrder=9
+Top=107
+
+[TTabSheet]
+Caption=Fato Gerador CTS
+Height=438
+HelpContext=0
+Hint=Seleciona Fatos Geradores a Serem Broqueados
+Left=4
+Name=TabSheet1
+PageControl=Pgc
+PageIndex=4
+TabStop=False
+Top=24
+Width=605
+
+[TwwDBGrid]
+Align=Client
+DataSource=DSRAT157
+EditControlOptions=CheckboxSingleClick
+Height=381
+HelpContext=0
+Left=0
+Name=wwDBGrid
+Parent=Panel1
+Options=Editing,Titles,Indicator,ColumnResize,ColLines,RowLines,Tabs,ConfirmDelete,CancelOnExit,MultiSelect
+Selected
+   idbloqcts,Id,5
+   idparcts,IdFGer,5
+   Descr_Finalidade,Descr_Finalidade,58
+   Exclusivo,Exclusivo,15
+   bloqueia,Bloqueia,7
+TabOrder=0
+TitleFont=Name=MS Sans Serif,Color=WindowText,Height=-11,Style=Normal
+Top=0
+Width=605
+
+[TGroupBox]
+Caption=
+Height=36
+HelpContext=0
+Left=99
+Name=GroupBox
+Parent=GBoutras
+TabOrder=8
+TabStop=False
+Top=348
+Width=497
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSXXT005
+EditDataField=usr
+EditWidth=100
+Enabled=False
+HelpContext=0
+Hint=Usuário Responsável
+LabelCaption=Usuário
+LabelWidth=40
+Left=28
+Name=Edusr
+Parent=GroupBox
+PopupMenu=
+TabOrder=0
+Top=10
+
+[TPanelEdit]
+EditColor=InfoBk
+EditDataSource=DSRAT010
+EditDataField=datadodia
+EditWidth=84
+Enabled=False
+HelpContext=0
+Hint=Data e Hora da digitação
+LabelCaption=Data/Hora
+LabelWidth=52
+Left=301
+Name=Eddatadodia
+Parent=GroupBox
+PopupMenu=
+TabOrder=1
+Top=10
+
+[TLabel]
+Alignment=Right
+Caption=Última Alteração
+Height=13
+Left=16
+Name=Label8
+Parent=GBoutras
+Top=353
+Width=77
+
+[TLabel]
+Alignment=Left
+AutoSize=False
+Caption=Libera ou Bloqueia Novos Períodos do Fato Gerador
+Font=Style=Bold
+Height=17
+Left=14
+Name=Label9
+Parent=Panel
+Top=7
+Width=304
+
+[TPanel]
+Align=Top
+BevelOuter=None
+BevelWidth=1
+BorderWidth=0
+Caption=
+Height=28
+Left=0
+Name=Panel
+Parent=TabSheet1
+TabOrder=1
+Top=0
+Width=605
+
+[TPanel]
+Align=Client
+BevelOuter=None
+BevelWidth=1
+BorderWidth=0
+Caption=
+Height=381
+Left=0
+Name=Panel1
+Parent=TabSheet1
+TabOrder=0
+Top=28
+Width=605
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSRAT010
+EditDataField=horadiacont
+EditWidth=40
+HelpContext=0
+Hint=Número de horas diarias contratuais
+LabelCaption=Horas Diárias
+LabelWidth=64
+Left=178
+Name=Edhoradiacont
+Parent=GBPonto
+PopupMenu=
+TabOrder=1
+Top=15
+
+[TZPopupMenu]
+CancelButton=PanelButtons
+FecharButton=PanelButtons
+FilterDialogButton=
+Grid=
+Name=Pmg
+Navigator=
+OkButton=PanelButtons
+OrderButton=
+
+[TGroupBox]
+Caption=Contrato Anterior
+Height=45
+HelpContext=0
+Left=4
+Name=GBContratoAnt
+Parent=GBoutras
+TabOrder=9
+TabStop=False
+Top=383
+Width=591
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSContratoAnt
+EditDataField=matricfunci
+EditWidth=60
+Enabled=False
+HelpContext=0
+LabelCaption=Matrícula Con
+LabelWidth=68
+Left=13
+Name=Edmatricfunci1
+Parent=GBContratoAnt
+PopupMenu=
+TabOrder=0
+Top=17
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSContratoAnt
+EditDataField=numcontrato
+EditWidth=28
+Enabled=False
+HelpContext=0
+LabelCaption=
+LabelWidth=0
+Left=155
+Name=Ednumcontrato1
+Parent=GBContratoAnt
+PopupMenu=
+TabOrder=1
+Top=17
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=DSContratoAnt
+EditDataField=descontrato
+EditWidth=388
+Enabled=False
+HelpContext=0
+LabelCaption=
+LabelWidth=0
+Left=191
+Name=Eddescontrato1
+Parent=GBContratoAnt
+PopupMenu=
+TabOrder=2
+Top=17
+
+[TProcedure]
+Name=ProcCusteio
+
+[TPanelEdit]
+EditColor=Window
+EditDataSource=
+EditDataField=itemtabdiv
+EditWidth=52
+FindDataSet=QRXT001r
+FindField=itemtabdiv
+FindModified=True
+FindRequired=True
+HelpContext=0
+Hint=Código da Categoria do Trabalhador - eSocial
+LabelCaption=Categ. eSocial
+LabelWidth=72
+Left=5
+Name=EdCatESocial
+Parent=GBRec
+PopupMenu=
+SpeedLookup=SLEsocial
+TabOrder=5
+Top=90
+
+[TSpeedLookup]
+FieldLookup=idtabdiv
+FieldLink=categesocial
+Glyph=Lanterna.bmp
+Height=21
+Left=144
+Name=SLEsocial
+NumGlyphs=2
+ObjectLink=RXL00100
+Parent=GBRec
+QueryLookup=QRXT001r
+QueryLink=QRAT010
+Top=89
+Width=21
+
+[TwwQuery]
+AutoCalcFields=False
+DataBaseName=DBObj
+Name=QRXT001r
+Params
+   itemtabdiv,Integer,Input
+   idtabdiv,Integer,Input
+Sql
+   SELECT idtabdiv, codtabdiv, itemtabdiv, descrnormal, descrreduz
+   FROM RXT00100
+   WHERE codtabdiv   = 101
+     AND itemtabdiv  > 0
+     AND itemtabdiv  = ISNULL(:itemtabdiv,itemtabdiv)
+     AND idtabdiv    = ISNULL(:idtabdiv,idtabdiv)
+
+[TwwDataSource]
+DataSet=QRXT001r
+Name=DSRXT001r
+
+[TDBText]
+AutoSize=False
+DataField=descrreduz
+DataSource=DSRXT001r
+Height=17
+Left=168
+Name=DBTCatESocial
+Parent=GBRec
+Top=91
+Width=350
+
+[TProcedure]
+Name=pLPadAdm
+
+[TProcedure]
+Name=pHabDesab_eSocial
+
+[Eventos]
+SHorarioAfterLookup
+   Edcodhoratrab.Text := QRAT013.codhoratrab;
+SpeedLookup2AfterLookup
+   QRAT023.Params.idatoadmin := ParamDestino.idatoadmin;
+   
+   Ednumatoadmin.Text := QRAT023.numatoadmin;
+   Edexercicio.Text   := QRAT023.exercicio;
+   
+   QRAT010.idatoadmin := QRAT023.idatoadmin;
+SpeedLookup2BeforeLookup
+   QRAT023.Params.idempresa   := IdEmpresa;
+   QRAT023.Params.numatoadmin := NULL;
+   QRAT023.Params.exercicio   := NULL;
+WCalButtonAfterClickOk
+   Proc_Idade.execute;
+   
+   QRAT010.datainiexerc := QRAT010.datadmissao;
+WCalButton2AfterClickOk
+   Qdata_adm.Params.data := QRAT010.datadeposse;
+   Qdata_adm.Open;
+   
+   QRAT010.datadmissao := Qdata_adm.prox_dia_util;
+   
+   QRAT010.datainiexerc := QRAT010.datadmissao;
+SLugAfterLookup
+   Edcodigoug.Text := QRXT008.codigoug;
+SLugBeforeLookup
+   QRXT008.Params.codigoug  := NULL;
+   QRXT008.Params.idempresa := IdEmpresa;
+SLUnidOrcBeforeLookup
+   QRAT008.Params.codorganog := NULL;
+   
+   QRXT007.Open;
+   ParamDestino.nivel := QRXT007.nivdespesa;
+SLMatriculaBeforeLookup
+   Parametros.idfuncionario := QRAT009.idfuncionario;
+   
+   QRAT009.Params.matricfunci := NULL;
+SLMatriculaAfterLookup
+   if (ParamDestino.idfuncionario = "") then
+       QRAT009.Params.idfuncionario := Parametros.idfuncionario;
+       QRAT009.Params.matricfunci   := NULL;
+       QRAT009.Open;
+   endif
+   
+   Edmatricfunci.Text := QRAT009.matricfunci;
+   
+   QRAT010.nroregistro := QRAT009.matricfunci;
+
+
+
+BitBtnOnClick
+   Parametros.Help:= PegarParametro(System, "Diretório Help")SMARrh;
+   HelpJump(Parametros.Help,167);
+CBXtipopagtoOnExit
+   if ((CBXtipopagto.Text = "Cheque") or
+       (CBXtipopagto.Text = "Caixa")) then
+        Ednumccorrent.Enabled   := False;
+        Ednumccorrent.EditColor := "BtnFace";
+   else
+        Ednumccorrent.Enabled   := True;
+        Ednumccorrent.EditColor := "Window";
+   endif
+EdcategsefipAfterLookup
+   QRAT010.categsefip := QRXT001j.idtabdiv;
+   
+   If (Edagentnociv.Enabled = False) then
+      pgc.SelectNextPage;
+   Endif
+EdcategsefipOnExit
+   QRXT001j.Params.idtabdiv := NULL;
+EdcodagenciaAfterLookup
+   QRAT010.idagencia := QRXT006.idagencia;
+EdcodigougAfterLookup
+   QRAT010.idug := QRXT008.idug;
+EdcodigougOnExit
+   QRXT008.Params.idug      := NULL;
+   QRXT008.Params.idempresa := IdEmpresa;
+EdcodlocalAfterLookup
+   QRAT010.idlocal := QRAT007.idlocal;
+   
+   if ((EdCodLocal.text <> "") AND (EdNumChapeira.text <> "")) then
+     if ((QRAT005.idlocal <> QRAT010.idlocal) AND (QRAT010.tipodeponto = "C"))then
+        ShowMess("Local de trabalho incompatível com o local da chapeira");
+     endif
+   endif
+EdcodlocalOnExit
+   QRAT007.Params.idlocal := NULL;
+EdexercicioAfterLookup
+   QRAT010.idatoadmin := QRAT023.idatoadmin;
+EdexercicioOnExit
+   QRAT023.Params.idatoadmin  := NULL;
+   QRAT023.Params.idempresa   := IdEmpresa;
+   
+   if (Ednumatoadmin.Text <> "") then
+     QRAT023.Params.numatoadmin := Ednumatoadmin.Text;
+   else
+     QRAT023.Params.numatoadmin := NULL;
+   endif
+   
+   QRAT023.Open;
+EdgrupoprocAfterLookup
+   QRAT010.grupoproc := QRXT001e.idtabdiv;
+EdlocalOrAfterLookup
+   QRAT010.idlocalorigem := QRAT007a.idlocal;
+EdlocalOrOnExit
+   QRAT007a.Params.idlocal := NULL;
+EdmatricfunciAfterLookup
+   QRAT010.idfuncionario := QRAT009.idfuncionario;
+   QRAT010.nroregistro := QRAT009.matricfunci;
+EdnumatoadminAfterLookup
+   QRAT010.idatoadmin := QRAT023.idatoadmin;
+EdnumatoadminOnExit
+   QRAT023.Params.idatoadmin := NULL;
+   QRAT023.Params.idempresa  := IdEmpresa;
+   
+   if (Edexercicio.Text <> "") then
+     QRAT023.Params.exercicio  := Edexercicio.Text;
+   else
+     QRAT023.Params.exercicio  := NULL;
+   endif
+   
+   QRAT023.Open;
+EdnumchapeiraAfterLookup
+   QRAT010.idchapeira := QRAT005.idchapeira;
+   
+   if ((EdCodLocal.text <> "") AND (EdNumChapeira.text <> "")) then
+     if ((QRAT005.idlocal <> QRAT010.idlocal) AND (QRAT010.tipodeponto = "C"))then
+        ShowMess("Local de trabalho incompatível com o local da chapeira");
+     endif
+   endif
+EdnumchapeiraOnExit
+   QRAT005.Params.idchapeira := NULL;
+   
+   Edcartaochape.SetFocus;
+EdProcessoAfterLookup
+   QRAT010.idtemporario := QRAT096.idtemporario;
+EdProcessoOnExit
+   QRAT096.Params.idtemporario := Null;
+EdrecursoAfterLookup
+   QRAT010.idfonterecurso := QRAT092.idfonterecurso;
+EdrecursoOnExit
+   QRAT092.Params.idfonterecurso := NULL;
+EdvincempregaAfterLookup
+   QRAT010.vincemprega := QRXT001a.idtabdiv;
+Proc_IdadeOnExecute
+   Parametros.Idade := ((DATEPART(year,QRAT010.datadmissao)) - (DATEPART(year,QRAT009.datanascime)));
+   
+   Parametros.dia_nas := DATEPART(day,QRAT009.datanascime);
+   Parametros.dia_adm := DATEPART(day,QRAT010.datadmissao);
+   Parametros.mes_nas := DATEPART(month,QRAT009.datanascime);
+   Parametros.mes_adm := DATEPART(month,QRAT010.datadmissao);
+   
+   Parametros.data_nasc := (Parametros.dia_nas + "/" + Parametros.mes_nas + "/" + DATEPART(YEAR,QRAT009.datanascime));
+   Parametros.data_admi := (Parametros.dia_adm + "/" + Parametros.mes_adm + "/" + DATEPART(YEAR,QRAT010.datadmissao));
+   
+   if (Parametros.data_nasc >= Parametros.data_admi) then
+     Parametros.Idade := (Parametros.Idade - 1);
+   endif
+   
+   if ((EdDatadmissao.text <> "") AND (EdMatricfunci.text <> "")) then
+     if (Parametros.idade < 14)  then
+        ShowMess("Idade para admissão inferior a 14 anos!!");
+     endif
+   endif
+ProcCamposOnExecute
+   IF ((QRAT010.regimejur = 5) or (QRAT010.regimejur = 6)) THEN
+        Edagentnociv.Enabled      := False;
+        Edcartaochape.Enabled     := False;
+        Edconsreg.Enabled         := False;
+        Eddatadeposse.Enabled     := False;
+        Eddatainiexerc.Enabled    := False;
+        Eddatanomeaca.Enabled     := False;
+        Edcodcargo.Enabled        := False;
+        Ednumchapeira.Enabled     := False;
+        Ednroconsreg.Enabled      := False;
+        Ednuminscrica.Enabled     := False;
+        Edtipadmcaged.Enabled     := False;
+        Edtipadmrais.Enabled      := False;
+   ELSE
+      IF (QRAT010.regimejur = 7)  THEN
+          Edagentnociv.Enabled  := False;
+          Edconsreg.Enabled     := False;
+          Eddatadeposse.Enabled := False;
+          Eddatanomeaca.Enabled := False;
+          Ednroconsreg.Enabled  := False;
+          Ednuminscrica.Enabled := False;
+          Edtipadmcaged.Enabled := False;
+          Edtipadmrais.Enabled  := False;
+      ENDIF
+   ENDIF
+QRAT008ABeforeOpen
+   QRAT008A.Params.exercicio := GetEnv("EXESIS");
+   QRAT008A.Params.idempresa := IdEmpresa;
+QRAT013BeforeOpen
+   QRAT013.Params.idempresa := IdEmpresa;
+SBLlotacaoOnClick
+   ParamDestino.idunidorc := QRAT008A.idunidorc;
+   ExecObjeto(RAP26400);
+SBRecursoAfterLookup
+   QRAT010.idfonterecurso := QRAT092.idfonterecurso;
+   Edrecurso.Text := QRAT092.codfonterecurso;
+
+   QControlaFonteRecurso.Params.exercicio    := QRXT007.exercicio;
+   QControlaFonteRecurso.Params.fonterecurso := QRAT092.idfonterecurso;
+   QControlaFonteRecurso.Open;
+   
+   If (QRXT007.ctlcontclasscp = 1) Then
+   
+      If (QRXT007.formaempenho > 0) Then
+   
+         If (QControlaFonteRecurso.Existe <> 1) Then
+            ShowMess("Fonte de Recurso não prevista na classificação contábil!");
+         EndIf
+   
+      EndIf
+   
+   EndIf
+
+SBRecursoBeforeLookup
+   QRAT092.Params.codfonterecurso := NULL;
+SBUnidOrcOnClick
+   ParamDestino.idunidorc := QRAT008.idunidorc;
+   ExecObjeto(RAP26400);
+SLAgenciaAfterLookup
+   Edcodagencia.Text := QRXT006.codagencia;
+SLAgenciaBeforeLookup
+   ParamDestino.idbanco := QRXT005.idbanco;
+   
+   QRXT006.Params.codagencia := NULL;
+SLBancoAfterLookup
+   if (ParamDestino.idbanco = "") then
+       QRXT005.Params.idbanco  := Parametros.idbanco;
+       QRXT005.Params.nrobanco := NULL;
+       QRXT005.Open;
+   endif
+   
+   Edcodbanco.Text := QRXT005.nrobanco;
+SLBancoBeforeLookup
+   Parametros.idbanco := QRXT005.idbanco;
+   
+   QRXT005.Params.nrobanco := NULL;
+SLChapeiraAfterLookup
+   Ednumchapeira.Text := QRAT005.numchapeira;
+   
+   if ((EdCodLocal.text <> "") AND (EdNumChapeira.text <> "")) then
+     if ((QRAT005.idlocal <> QRAT010.idlocal) AND (QRAT010.tipodeponto = "C"))then
+        ShowMess("Local de trabalho incompatível com o local da chapeira");
+     endif
+   endif
+SLGrpProcessAfterLookup
+   Edgrupoproc.Text := QRXT001E.itemtabdiv;
+SLGrpProcessBeforeLookup
+   ParamDestino.codtabdiv := 3;
+   
+   QRXT001e.Params.itemtabdiv:= NULL;
+SLLocalAfterLookup
+   Edcodlocal.Text := QRAT007.codlocal;
+   
+   if ((EdCodLocal.text <> "") AND (EdNumChapeira.text <> "")) then
+     if ((QRAT005.idlocal <> QRAT010.idlocal) AND (QRAT010.tipodeponto = "C"))then
+        ShowMess("Local de trabalho incompatível com o local da chapeira");
+     endif
+   endif
+SLLocOrAfterLookup
+   EdlocalOr.Text := QRAT007a.codlocal;
+SLLocOrBeforeLookup
+   QRAT007a.Params.codlocal := NULL;
+EdcodbancoOnExit
+   QRXT005.Params.idbanco := NULL;
+EdcodagenciaOnExit
+   QRXT006.Params.idbanco   := QRXT005.idbanco;
+   QRXT006.Params.idagencia := NULL;
+   
+   
+   if (Ednumccorrent.Enabled = "False") then
+     Edgrupoproc.SetFocus;
+     //pgc.SelectNextPage;
+   endif
+EdnumccorrentOnExit
+   Qccorrente.Params.ccorrente := Ednumccorrent.Text;
+   Qccorrente.Open;
+   
+   if (Qccorrente.ccorrente_existe = 1) then
+     ShowMess("Conta Corrente já cadastrada no sistema.");
+   endif
+EdgrupoprocOnExit
+   QRXT001e.Params.idtabdiv := NULL;
+
+SBProcessoAfterLookup
+   If ((QRAT096.idtemporario <> "") AND (QRAT096.idtemporario > 0)) then
+      If (ParamOrigem.MethodoEdicao = Incluir) then
+         QRAT010.datafimexerc    := QRAT096.datatermino;
+      Endif
+   
+      QRAT010.datafimcontrato := QRAT096.dataencerra;
+   
+      If ((QRAT010.datafimcontrato <> "") And (QRAT010.datainiexerc <> "")) then
+        QRAT010.diascontrato    := (DATEDIFF(DAY,QRAT010.datainiexerc,QRAT010.datafimcontrato) + 1);
+      Endif
+   
+      QRAT010.diasprorroga  := QRAT096.diasprorroga;
+      QRAT010.idtemporario  := QRAT096.idtemporario;
+      EdProcesso.Text       := QRAT096.numprocesso;
+   Endif
+QRXT001aAfterOpen
+   If (((QRXT001a.itemtabdiv = 50) OR
+        (QRXT001a.itemtabdiv = 60) OR
+        (QRXT001a.itemtabdiv = 65) OR
+        (QRXT001a.itemtabdiv = 70) OR
+        (QRXT001a.itemtabdiv = 75) OR
+        (QRXT001a.itemtabdiv = 90)) and (QRXT001a.itemtabdiv <> "")) then
+         Eddatafimcontrato.Enabled   := True;
+         Eddatafimcontrato.EditColor := "Window";
+         WCTermino.Enabled         := True;
+   else
+     if ( ((QRAT010.state = Insert) or (QRAT010.state = Edit)) and ((QRAT093.temporario = False) AND (QRAT093.temporarioindiv = False)) ) then
+          QRAT010.datafimcontrato := "";
+     endif
+   
+     // Adrian [14/08/2003] -> a pedido do Paulinho devido lançamento de Estagiários em NOdessa
+     // Deverá ser revisto com calma depois.
+     //Eddatafimcontrato.Enabled := False;
+     //Eddatafimcontrato.EditColor := "BtnFace";
+     //WCEncerra.Enabled := False;
+   endif
+
+EdtipadmraisAfterLookup
+   QRAT010.tipadmrais := QRXT001o.idtabdiv;
+SLTipAdmAfterLookup
+   Edtipadmrais.Text  := QRXT001o.itemtabdiv;
+   QRAT010.tipadmrais := QRXT001o.idtabdiv;
+SLCagedAfterLookup
+   Edtipadmcaged.Text  := QRXT001h.itemtabdiv;
+   QRAT010.tipadmcaged := QRXT001h.idtabdiv;
+//   IF ((Edcatfunciona.Text = 6) OR (Edcatfunciona.Text = 7)) THEN
+//        Edinss.Enabled   := True;
+//        Edinss.EditColor := "Window";
+//   else
+//        QRAT010.nrbeneficioinss := "";
+//        Edinss.Enabled          := False;
+//        Edinss.EditColor        := "BtnFace";
+//   endif
+   
+   //CAGED
+   If (ParamOrigem.MethodoEdicao = Incluir) then
+      QRXT001h.Params.idtabdiv     :=  QRAT093.tipadmcaged;
+      QRXT001h.Params.itemtabdiv   :=  Null;
+      QRXT001h.Open;
+      QRAT010.tipadmcaged := QRXT001h.idtabdiv;
+      Edtipadmcaged.Text  := QRXT001h.itemtabdiv;
+   Endif
+   
+   //Vinculo
+   QRXT001a.Params.idtabdiv     :=  QRAT093.vincemprega;
+   QRXT001a.Params.itemtabdiv   :=  Null;
+   QRXT001a.Open;
+   QRAT010.vincemprega := QRXT001a.idtabdiv;
+   Edvincemprega.Text  := QRXT001a.itemtabdiv;
+   
+   //Tipo Salario
+   If (ParamOrigem.MethodoEdicao = Incluir) then
+      QRXT001f.Params.idtabdiv     :=  QRAT093.tiposalcont;
+      QRXT001f.Params.itemtabdiv   :=  Null;
+      QRXT001f.Open;
+      QRAT010.tiposalcont := QRXT001f.idtabdiv;
+      Edtiposalcont.Text  := QRXT001f.itemtabdiv;
+   Endif
+   
+   //Func Convidado
+   
+   QRAT010.funconv := QRAT093.funconv;
+   
+   
+   //Prev Part Empres
+   QRFT025.Params.idprevidpatr := QRAT093.idprevidpatr;
+   QRFT025.Open;
+   
+   QRAT010.idprevidpatr := QRAT093.idprevidpatr;
+   QRAT010.opcaodefgts  := QRAT093.temfgts;
+//   IF ((Edcatfunciona.Text = 6) OR (Edcatfunciona.Text = 7)) THEN
+//        Edinss.Enabled   := True;
+//        Edinss.EditColor := "Window";
+//   else
+//        QRAT010.nrbeneficioinss := "";
+//        Edinss.Enabled          := False;
+//        Edinss.EditColor        := "BtnFace";
+//   endif
+   
+   //CAGED
+   If (ParamOrigem.MethodoEdicao = Incluir) then
+      QRXT001h.Params.idtabdiv     :=  QRAT093.tipadmcaged;
+      QRXT001h.Params.itemtabdiv   :=  Null;
+      QRXT001h.Open;
+      QRAT010.tipadmcaged := QRXT001h.idtabdiv;
+      Edtipadmcaged.Text  := QRXT001h.itemtabdiv;
+   Endif
+   
+   //Vinculo
+   QRXT001a.Params.idtabdiv     :=  QRAT093.vincemprega;
+   QRXT001a.Params.itemtabdiv   :=  Null;
+   QRXT001a.Open;
+   QRAT010.vincemprega := QRXT001a.idtabdiv;
+   Edvincemprega.Text  := QRXT001a.itemtabdiv;
+   
+   //Tipo Salario
+   If (ParamOrigem.MethodoEdicao = Incluir) then
+      QRXT001f.Params.idtabdiv     :=  QRAT093.tiposalcont;
+      QRXT001f.Params.itemtabdiv   :=  Null;
+      QRXT001f.Open;
+      QRAT010.tiposalcont := QRXT001f.idtabdiv;
+      Edtiposalcont.Text  := QRXT001f.itemtabdiv;
+   Endif
+   
+   
+   //Func Convidado
+   
+   QRAT010.funconv := QRAT093.funconv;
+   
+   
+   //Prev Part Empres
+   QRFT025.Params.idprevidpatr := QRAT093.idprevidpatr;
+   QRFT025.Open;
+   
+   QRAT010.idprevidpatr := QRAT093.idprevidpatr;
+   QRAT010.opcaodefgts  := QRAT093.temfgts;
+
+SLTipoSalAfterLookup
+   Edtiposalcont.Text  := QRXT001f.itemtabdiv;
+   QRAT010.tiposalcont := QRXT001f.idtabdiv;
+
+
+
+
+
+
+
+
+
+
+
+
+
+EdcatfuncionaAfterLookup
+   QRAT010.catfunciona := QRXT001c.idtabdiv;
+
+QRXT007BeforeOpen
+   QRXT007.params.IdEmpresa := IdEmpresa;
+QRXT001aAfterOpen
+   If (((QRXT001a.itemtabdiv = 50) OR
+        (QRXT001a.itemtabdiv = 60) OR
+        (QRXT001a.itemtabdiv = 65) OR
+        (QRXT001a.itemtabdiv = 70) OR
+        (QRXT001a.itemtabdiv = 75) OR
+        (QRXT001a.itemtabdiv = 90)) and (QRXT001a.itemtabdiv <> "")) then
+         Eddatafimcontrato.Enabled   := True;
+         Eddatafimcontrato.EditColor := "Window";
+         WCTermino.Enabled         := True;
+   else
+     if ( ((QRAT010.state = Insert) or (QRAT010.state = Edit)) and ((QRAT093.temporario = False) AND (QRAT093.temporarioindiv = False)) ) then
+          QRAT010.datafimcontrato := "";
+     endif
+   
+     // Adrian [14/08/2003] -> a pedido do Paulinho devido lançamento de Estagiários em NOdessa
+     // Deverá ser revisto com calma depois.
+     //Eddatafimcontrato.Enabled := False;
+     //Eddatafimcontrato.EditColor := "BtnFace";
+     //WCEncerra.Enabled := False;
+   endif
+QRAT093AfterOpen
+   If ((QRAT093.temporario = False) or (QRAT093.temporarioindiv = true))then
+       EdProcesso.Enabled     := False;
+       EdProcesso.EditColor   := "BtnFace";
+       SBProcesso.Enabled     := False;
+   Else
+      EdProcesso.Enabled      := True;
+      EdProcesso.EditColor    := "Window";
+      SBProcesso.Enabled      := True;
+   Endif
+   
+   If (QRAT093.temporarioindiv = True) then
+      Eddiascontrato.Enabled      := True;
+      Eddiascontrato.EditColor    := "Window";
+      Eddatafimcontrato.Enabled   := True;
+      Eddatafimcontrato.EditColor := "Window";
+      WCTermino.Enabled           := True;
+   Else
+      Eddiascontrato.Enabled      := False;
+      Eddiascontrato.EditColor    := "InfoBk";
+      If ((QRAT010.State = Insert) OR (QRAT010.State = Edit)) Then
+         QRAT010.diascontrato     := 0;
+      Endif
+   
+      Eddatafimcontrato.Enabled   := False;
+      Eddatafimcontrato.EditColor := InfoBk";
+      If ((QRAT010.State = Insert) OR (QRAT010.State = Edit)) Then
+         QRAT010.datafimexerc        := "";
+      Endif
+   
+      WCTermino.Enabled           := False;
+   Endif
+   
+   
+   If ((QRAT093.temporario = True) or (QRAT093.temporarioindiv = True)) then
+   
+      EdDatEncerra.Enabled      := True;
+      EdDatEncerra.EditColor    := "Window";
+      WCEncerra.Enabled         := True;
+   else
+      EdDatEncerra.Enabled      := False;
+      EdDatEncerra.EditColor    := "BtnFace";
+   
+      If ((QRAT010.State = Insert) OR (QRAT010.State = Edit)) Then
+         QRAT010.datafimcontrato   := "";
+      Endif
+      WCEncerra.Enabled         := False;
+   Endif
+
+EdtipadmcagedAfterLookup
+   QRAT010.tipadmcaged := QRXT001h.idtabdiv;
+SLRegimeBeforeLookup
+   ParamDestino.codtabdiv:= 5;
+   
+   QRXT001n.Params.itemtabdiv:= NULL;
+SBPadraoBeforeLookup
+   ParamDestino.Cod_Regime_Trab:= QRXT001n.itemtabdiv;
+   
+   //Somente os padrões Habilitados
+   ParamDestino.habilitado := 1;
+   
+   QRAT093.Params.codpadraoadm := NULL;
+SLTipAdmBeforeLookup
+   ParamDestino.codtabdiv:= 44;
+   QRXT001o.Params.itemtabdiv:= NULL;
+SLCagedBeforeLookup
+   ParamDestino.codtabdiv:= 27;
+   QRXT001h.Params.itemtabdiv:= NULL;
+SLTipoSalBeforeLookup
+   ParamDestino.codtabdiv:= 22;
+   QRXT001f.Params.itemtabdiv:= NULL;
+SLLocalBeforeLookup
+   QRAT007.Params.codlocal := NULL;
+SLChapeiraBeforeLookup
+   QRAT005.Params.numchapeira := NULL;
+SHorarioBeforeLookup
+   QRAT013.Params.codhoratrab := NULL;
+
+QRAT093BeforeOpen
+   QRAT093.Params.regimejur := QRXT001n.idtabdiv;
+
+EdconsregOnExit
+   QRXT001i.Params.idtabdiv := NULL;
+EdconsregAfterLookup
+   QRAT010.consreg := QRXT001i.idtabdiv;
+SLConsRegBeforeLookup
+   ParamDestino.codtabdiv := 36;
+   
+   QRXT001i.Params.itemtabdiv := NULL;
+SLConsRegAfterLookup
+   Edconsreg.Text := QRXT001I.itemtabdiv;
+EdMotInexRemOnExit
+   QRXT001q.Params.idtabdiv:= NULL;
+SLMotInexRemBeforeLookup
+   ParamDestino.codtabdiv := 58;
+   
+   QRXT001q.Params.itemtabdiv := NULL;
+SLMotInexRemAfterLookup
+   EdMotInexRem.Text := QRXT001q.itemtabdiv;
+EdMotInexRemAfterLookup
+   QRAT010.motivoagentepolitico := QRXT001q.idtabdiv;
+
+SBProcessoBeforeLookup
+   ParamDestino.encerrado     := 1;
+   QRAT096.Params.numprocesso := Null;
+
+EdregimejurOnExit
+   QRXT001n.Params.idtabdiv:= NULL;
+   
+   ProcCampos.Execute;
+EdregimejurAfterLookup
+   QRAT010.regimejur := QRXT001n.idtabdiv;
+SLRegimeAfterLookup
+   Edregimejur.Text := QRXT001N.itemtabdiv;
+QRAT002AfterOpen
+   Edvalor.Text :=  QRAT002.valor;
+QRAT001aAfterOpen
+   IF (QRAT001.idmaster > 0) THEN
+      Edmacrocargo.Text    := QRAT001a.descargo;
+      Edmacrocargo.Visible := True;
+      Edmacrocargo.Hint    := QRAT001a.descargo;
+   ELSE
+      Edmacrocargo.Text    := "";
+      Edmacrocargo.Visible := False;
+      Edmacrocargo.Hint    := "";
+   ENDIF
+
+DBFgtsOnExit
+   //pgc.SelectNextPage;
+EdtiposalcontAfterLookup
+   QRAT010.tiposalcont := QRXT001f.idtabdiv;
+   
+   Edtiposalcont.Text := QRXT001f.itemtabdiv;
+
+SLSindicatoAfterLookup
+   Edcodsindicat.Text := QRXT014.codemp;
+QRAT009BeforeOpen
+   QRAT009.Params.cargarapida := 0;
+QRAT009ABeforeOpen
+   QRAT009A.Params.cargarapida := 0;
+
+QccorrenteBeforeOpen
+   Qccorrente.Params.cargarapida := 0;
+QRAT002BeforeOpen
+   QRAT002.Params.cargarapida := 0;
+   QRAT002.Params.idempresa   := IdEmpresa;
+   QRAT002.Params.idcontrato  := QRAT010.idcontrato;
+QRAT005BeforeOpen
+   QRAT005.Params.cargarapida := 0;
+   QRAT005.Params.idempresa:= IdEmpresa;
+QRAT007BeforeOpen
+   QRAT007.Params.cargarapida := 0;
+   QRAT007.Params.idempresa:= IdEmpresa;
+QRAT007aBeforeOpen
+   QRAT007a.Params.cargarapida := 0;
+QRAT008BeforeOpen
+   QRAT008.Params.idempresa:= IdEmpresa;
+   QRAT008.Params.exercicio := GetEnv("EXESIS");
+QRAT010ABeforeOpen
+   QRAT010A.Params.cargarapida := 0;
+QRAT092BeforeOpen
+   QRAT092.Params.cargarapida := 0;
+QRAT096BeforeOpen
+   QRAT096.Params.cargarapida := 0;
+QRXT005BeforeOpen
+   QRXT005.Params.cargarapida := 0;
+QRXT006BeforeOpen
+   QRXT006.Params.cargarapida := 0;
+QRXT014BeforeOpen
+   QRXT014.Params.cargarapida := 0;
+
+SLCargoBeforeLookup
+   QRAT001.Params.codcargo := NULL;
+   //Somente trazer os cargos não extintos -> 0 todos  -> 1 somente os ativos
+   
+   //*ParamDestino.extintos := 1;
+   
+   //If (ParamOrigem.MethodoEdicao = Incluir) then
+   //   ParamDestino.Cod_Regime := QRXT001n.itemtabdiv;
+   //Else
+   //   ParamDestino.Cod_Regime := "";
+   //Endif
+QRAT157BeforeEdit
+   Parametros.ColTagidbloqcts        := QRAT157.idbloqcts;
+   Parametros.ColTagidparcts         := QRAT157.idparcts;
+   Parametros.ColTagDescr_Finalidade := QRAT157.Descr_Finalidade;
+   Parametros.ColTagExclusivo        := QRAT157.Exclusivo;
+QRAT157BeforePost
+   QRAT157.idbloqcts        := Parametros.ColTagidbloqcts;
+   QRAT157.idparcts         := Parametros.ColTagidparcts;
+   QRAT157.Descr_Finalidade := Parametros.ColTagDescr_Finalidade;
+   QRAT157.Exclusivo        := Parametros.ColTagExclusivo;
+TabSheet1OnEnter
+   QRAT157.Params.idcontrato := QRAT010.idcontrato;
+   
+   QRAT157.Open;
+PanelButtonsOnAfterTransaction
+   If (ParamOrigem.MethodoEdicao = Incluir) Then
+      qVerifErro.Params.idfuncionario := QRAT010.idfuncionario;
+      qVerifErro.Params.numcontrato   := QRAT010.numcontrato;
+      qVerifErro.Open;
+   
+      If (qVerifErro.erro > 0) Then
+         ShowMess("Inconsistências encontradas no cadastro!");
+         ParamDestino.idfuncionario := QRAT010.idfuncionario;
+         ParamDestino.numcontrato   := QRAT010.numcontrato;
+         ParamDestino.MethodoEdicao := Consultar;
+         ExecObjeto(RAL01003);
+      Endif
+      // Configuracao
+      QRXT007.open;
+      If (QRXT007.ctrltempo = 1) Then
+         ParamDestino.idfuncionario := QRAT010.idfuncionario;
+         ParamDestino.numcontrato   := QRAT010.numcontrato;
+         ExecObjeto(RAL15700);
+      Endif
+   
+   Endif
+
+EdcodcargoOnExit
+   QRAT001.Params.idcargo := NULL;
+PanelButtonsButCancelOnClick
+   // If (ParamOrigem.MethodoEdicao IN ("Copiar/Incluir")) Then
+   //    If (QProxIdcontrato.id <> "") Then
+   //        QCancelInsert.Params.idcontrato := QProxIdcontrato.Id;
+   //        QCancelInsert.ExecSql;
+   //    Endif
+   // Endif
+PanelButtonsButOkOnClick
+   If (QRAT157.State = "Edit") Then
+       QRAT157.Post;
+   Endif
+   
+   if (ParamOrigem.MethodoEdicao = Alterar) then
+       QDeleteBloq.Params.idcontrato := QRAT157.idcontrato;
+       QDeleteBloq.ExecSql;
+   Endif
+
+QRAT009AfterOpen
+   if ((QRAT009.idfuncionario > 0) and (QRAT009.sindicancia = "True") and (ParamOrigem.MethodoEdicao = "Incluir")) then
+        Showmess("Funcionário encontra-se em Sindicância");
+   Endif
+   
+   if (QRAT010.state = Insert) then
+       Qnumcontrato.params.idfuncionario := QRAT009.idfuncionario;
+       Qnumcontrato.open;
+       QRAT010.numcontrato := Qnumcontrato.maximo;
+   endif
+
+EdmatricfunciOnExit
+   QRAT009.Params.idfuncionario := NULL;
+   QRAT009.Params.idempresa     := Idempresa;
+   //QRAT009.Params.matricfunci   := Edmatricfunci.Text;
+   //QRAT009.Open;
+
+WCTerminoAfterClickOk
+   QRAT010.diascontrato := qDataFimExerc.dias;
+   If (QRAT010.datafimcontrato = "") then
+       QRAT010.datafimcontrato := QRAT010.datafimexerc;
+   Endif
+WCEncerraAfterClickOk
+   QRAT010.diascontrato := qDataFimExerc.dias;
+
+
+
+DBObsOnChange
+   Parametros.qtcarac := 500;
+   Parametros.valor   := (Parametros.qtcarac - Length(DBObs.Text));
+   
+   lblCaractere.Caption := Parametros.Valor;
+   
+   If (Parametros.Valor < 0) Then
+     DBObs.Text := Copy(DBObs.Text,1,Parametros.qtcarac);
+     ShowMess("O tamanho máximo do texto deve ser respeitado");
+   Endif
+wwDBGridOnExit
+   If (QRAT157.State = "Edit") Then
+      QRAT157.Post;
+   Endif
+
+EdtipadmraisOnExit
+   QRXT001o.Params.idtabdiv := NULL;
+   //Eddatanomeaca.SetFocus;
+EdcatfuncionaOnExit
+   QRXT001c.Params.idtabdiv := NULL;
+EdtipadmcagedOnExit
+   QRXT001h.Params.idtabdiv := NULL;
+   //Eddatadmissao.SetFocus;
+EdvincempregaOnExit
+   QRXT001a.Params.idtabdiv := NULL;
+EdtiposalcontOnExit
+   QRXT001f.Params.idtabdiv := NULL;
+   
+   //pgc.SelectNextPage;
+   
+   
+   //IF ((Edcatfunciona.Text < 6) OR (Edcatfunciona.Text > 7)) THEN
+   //
+   //     pgc.SelectNextPage;
+   //
+   //Endif
+EdseqcalculoOnExit
+   //Edtipadmrais.SetFocus;
+EdcodpadraoAfterLookup
+   QRAT010.idpadrao := QRAT002.idpadrao;
+   
+   if ((EdCodCargo.text <> "") AND (EdCodPadrao.text <> "")) then
+     if (QRXT007.ctlplcar = 1) then
+       if (QRAT009.grauinstruc < QRAT001.grauinstruc) then
+          ShowMess("Funcionário com o grau de instrução menor que o exigido para o cargo!!");
+       endif
+     endif
+   endif
+SLCodPadraoAfterLookup
+   QParametros.Open;
+   IF (QParametros.valorparamsis = 'S') THEN
+      EdCodPadrao.text := QRAT002.identpadrao;
+   ELSE
+      EdCodPadrao.text := QRAT002.codpadrao;
+   ENDIF
+SLCodPadraoBeforeLookup
+   ParamDestino.codpadrao := "";
+   QRAT002.Params.identpadrao := NULL;
+   QRAT002.Params.codpadrao   := NULL;
+EdcodpadraoOnExit
+   QRAT002.Params.idpadrao := NULL;
+
+EdUnidOrcAfterLookup
+   QRAT010.idunidorcaux := QRAT008.idunidorc;
+   
+   IF (QRXT007.formaempenho > 0) THEN
+   
+       IF (QRAT008.idfonterecurso = "") THEN
+        if (Edcodorganog.Text <> "") then
+           Edunidorc.SetFocus;
+   
+           QRAT010.idfonterecurso := "";
+   
+           // Fonte de Recurso - limpar tela
+           QRAT092.Params.idfonterecurso  := -1;
+           QRAT092.Params.codfonterecurso := Null;
+           QRAT092.Open;
+           Edrecurso.Text:= QRAT092.codfonterecurso;
+   
+           RaiseExcept("Custeio Sem Informação de Fonte de Recurso");
+        endif
+       Endif
+   Endif
+   
+   if (ParamOrigem.MethodoEdicao = Incluir) then
+       QRAT010.idfonterecurso := QRAT008.idfonterecurso;
+   
+       // Fonte de Recurso
+       QRAT092.Params.idfonterecurso  := QRAT008.idfonterecurso;
+       QRAT092.Params.codfonterecurso := Null;
+       QRAT092.Open;
+       Edrecurso.Text:= QRAT092.codfonterecurso;
+   Endif
+EdUnidOrcOnExit
+   QRAT008.params.idunidorc := NULL;
+
+EdcodhoratrabAfterLookup
+   QRAT010.idhorario := QRAT013.idhorario;
+EdcodhoratrabOnExit
+   QRAT013.Params.idhorario := NULL;
+DBCBtipodepontoOnChange
+   if (DBCBtipodeponto.text <> "Cartão") then
+       EdNumChapeira.enabled := false;
+       EdNumChapeira.EditColor := "BtnFace";
+       EdNumChapeira.Text := "";
+   
+       QRAT005.Params.idchapeira:= -1;
+       QRAT005.Open;
+   
+       SLChapeira.Enabled := false;
+       EdCartaoChape.enabled := false;
+       EdCartaoChape.EditColor := "BtnFace";
+   
+       if ((QRAT010.state = Insert) OR (QRAT010.state = Edit)) then
+            QRAT010.cartaochape := "";
+            QRAT010.idchapeira  := "";
+       endif
+   else
+       EdNumChapeira.enabled   := true;
+       EdNumChapeira.EditColor := "Window";
+       SLChapeira.Enabled      := true;
+   
+       EdCartaoChape.enabled   := true;
+       EdCartaoChape.EditColor := "Window";
+   endif
+TabFGTSOnEnter
+   If ((ParamOrigem.MethodoEdicao = Consultar) and (Edhoradiacont.Text = "")) then
+       Edhoradiacont.Text := (QRAT010.horasemcont / 5);
+   Endif
+TabLotUnidOrcOnEnter
+   If (QRAT010.opcaodefgts = False) then
+       Eddatadeopcao.enabled   := False;
+       Eddatadeopcao.Editcolor := "BtnFace";
+       Ednocontafgts.enabled := False;
+       Ednocontafgts.Editcolor := "BtnFace";
+   else
+       Eddatadeopcao.enabled   := True;
+       Eddatadeopcao.Editcolor := "Window";
+       Ednocontafgts.enabled   := True;
+       Ednocontafgts.Editcolor := "Window";
+   Endif
+
+QRAT001BeforeOpen
+   QRAT001.Params.cargarapida := 0;
+   
+   QRAT001.Params.idempresa := IdEmpresa;
+   
+   
+   //if (QRXT007.Ctlplcar = 2) Then
+   //
+   //    If (ParamOrigem.MethodoEdicao = Incluir) then
+   //        QRAT001.Params.regimejur := QRXT001n.idtabdiv;
+   //    Else
+   //        QRAT001.Params.regimejur := Null;
+   //    Endif
+   //
+   //Else
+       QRAT001.Params.regimejur := Null;
+   //Endif
+
+QUtilizaChapeiraAfterOpen
+   If ((QUtilizaChapeira.ValorParametro = "S") AND (ParamOrigem.MethodoEdicao = "Alterar")) Then
+      DBCBtipodeponto.Enabled := False;
+      DBCBtipodeponto.Color   := "BtnFace";
+   Endif
+
+
+EddatainiexercOnExit
+   If ((QRAT093.temporario = False) and (QRAT093.temporarioindiv = False)) then
+      qDataFimExerc.Params.datainiexerc := QRAT010.datainiexerc;
+      qDataFimExerc.Params.datafimexerc := QRAT010.datafimexerc;
+      qDataFimExerc.Params.dias         := NULL;
+      qDataFimExerc.Open;
+      QRAT010.diascontrato := qDataFimExerc.dias;
+      pgc.SelectNextPage;
+   
+    If (QRAT010.datafimcontrato <> "") then
+      qDataFimExerc.Params.datainiexerc := QRAT010.datainiexerc;
+      qDataFimExerc.Params.datafimexerc := QRAT010.datafimexerc;
+      qDataFimExerc.Params.dias         := NULL;
+      qDataFimExerc.Open;
+      QRAT010.diascontrato := qDataFimExerc.dias;
+    Endif
+   Endif
+EddiascontratoOnExit
+   If (QRAT010.diascontrato > 0) then
+      qDataFimExerc.Params.datainiexerc := QRAT010.datainiexerc;
+      qDataFimExerc.Params.datafimexerc := QRAT010.datafimexerc;
+      qDataFimExerc.Params.dias         := QRAT010.diascontrato;
+      qDataFimExerc.Open;
+   
+      QRAT010.diascontrato := qDataFimExerc.dias;
+      QRAT010.datafimexerc := qDataFimExerc.datatermino;
+   
+      If ((QRAT010.datafimcontrato = "") OR (Eddatafimcontrato.Text <> EdDatEncerra.Text)) then
+         QRAT010.datafimcontrato := QRAT010.datafimexerc;
+      Endif
+   
+   Endif
+EddatafimcontratoOnExit
+   qDataFimExerc.Params.datainiexerc := QRAT010.datainiexerc;
+   qDataFimExerc.Params.datafimexerc := QRAT010.datafimexerc;
+   qDataFimExerc.Params.dias         := NULL;
+   qDataFimExerc.Open;
+   QRAT010.diascontrato := qDataFimExerc.dias;
+   
+   If ((QRAT010.datafimcontrato = "") OR (Eddatafimcontrato.Text <> EdDatEncerra.Text)) then
+       QRAT010.datafimcontrato := QRAT010.datafimexerc;
+   Endif
+   //pgc.SelectNextPage;
+EdDatEncerraOnExit
+   If (QRAT010.datafimcontrato <> "") then
+     qDataFimExerc.Params.datainiexerc := QRAT010.datainiexerc;
+     qDataFimExerc.Params.datafimexerc := QRAT010.datafimexerc;
+     qDataFimExerc.Params.dias         := NULL;
+     qDataFimExerc.Open;
+     QRAT010.diascontrato := qDataFimExerc.dias;
+   else
+     QRAT010.diascontrato := 0;
+   Endif
+   pgc.SelectNextPage;
+EddatanomeacaOnExit
+   //Eddatadeposse.SetFocus;
+EddatadmissaoAfterLookup
+   Proc_Idade.execute;
+EddatadmissaoOnExit
+   Proc_Idade.execute;
+   
+   If ((ParamOrigem.MethoEdicao = Alterar) and (QRAT010.datainiexerc = "")) then
+      QRAT010.datainiexerc := QRAT010.datadmissao;
+   Endif
+   
+   
+   pgc.SelectNextPage;
+
+EddatadeposseOnExit
+   If (ParamOrigem.MethodoEdicao = Incluir) then
+   
+      Qdata_adm.Params.data := QRAT010.datadeposse;
+      Qdata_adm.Open;
+   
+      If (QRAT010.datadmissao = "") then
+         QRAT010.datadmissao  := Qdata_adm.prox_dia_util;
+      Endif
+   
+      If (QRAT010.datainiexerc = "") then
+        QRAT010.datainiexerc := Qdata_adm.prox_dia_util;
+      Endif
+   Endif
+
+
+ProcCusteioOnExecute
+   //Verifica se a chamada é do Afterlookup do sppedlookup
+   If (Parametros.ProcCusteio = "L") then
+     Edcodorganog.Text := QRAT008A.codorganog;
+   Endif
+   
+   QRAT010.idlotacao := QRAT008A.idunidorc;
+   // Atualiza campo custeio igual a lotação somente se o campo custeio estiver vazio.
+   If ((ParamOrigem.MethodoEdicao = Incluir) AND (EdUnidOrc.Text = "" )) then
+   
+     QRAT008.Params.idunidorc   := QRAT008A.idunidorc;
+     QRAT008.Params.codorganog  := Null;
+     QRAT008.Open;
+     EdUnidOrc.Text := QRAT008.codorganog;
+   
+   Endif
+EdcodorganogOnExit
+   QRAT008A.params.idunidorc := NULL;
+SLLotacaoBeforeLookup
+   QRAT008A.Params.codorganog := NULL;
+   
+   QRXT007.Open;
+EdcodorganogAfterLookup
+   Parametros.ProcCusteio := "" ;
+   ProcCusteio.Execute;
+SLUnidOrcAfterLookup
+   EdUnidOrc.text := QRAT008.codorganog;
+   
+   QRAT010.idunidorcaux := QRAT008.idunidorc;
+   
+   IF (QRXT007.formaempenho > 0) THEN
+   
+       IF (QRAT008.idfonterecurso = "") THEN
+           Edunidorc.SetFocus;
+   
+           QRAT010.idfonterecurso := "";
+   
+           // Fonte de Recurso - limpar tela
+           QRAT092.Params.idfonterecurso  := -1;
+           QRAT092.Params.codfonterecurso := Null;
+           QRAT092.Open;
+           Edrecurso.Text:= QRAT092.codfonterecurso;
+   
+           RaiseExcept("Custeio Sem Informação de Fonte de Recurso");
+       Endif
+   Endif
+   
+   
+   if (ParamOrigem.MethodoEdicao = Incluir) then
+       QRAT010.idfonterecurso := QRAT008.idfonterecurso;
+   
+       // Fonte de Recurso
+       QRAT092.Params.idfonterecurso  := QRAT008.idfonterecurso;
+       QRAT092.Params.codfonterecurso := Null;
+       QRAT092.Open;
+       Edrecurso.Text:= QRAT092.codfonterecurso;
+   
+   Endif
+   
+   QControlaCusteio.Params.exercicio := QRXT007.exercicio;
+   QControlaCusteio.Params.custeio   := QRAT008.idunidorc;
+   QControlaCusteio.Open;
+   
+   If (QRXT007.ctlcontclasscp = 1) Then
+   
+      If (QRXT007.formaempenho > 0) Then
+   
+         If (QControlaCusteio.Existe <> 1) Then
+            ShowMess("Custeio não previsto na classificação contábil!");
+         EndIf
+   
+      EndIf
+   
+   EndIf
+SLLotacaoAfterLookup
+   QRAT010.idlotacao := QRAT008A.idunidorc;
+   Parametros.ProcCusteio := "L" ;
+   ProcCusteio.Execute;
+
+QRAT010AfterPost
+
+   IF (ParamOrigem.MethodoEdicao IN ("Copiar/Incluir")) THEN
+      QProxIdcontrato.Open;
+      Parametros.idcontrato := QProxIdcontrato.id;
+   ELSE
+      Parametros.idcontrato := QRAT010.idcontrato;
+   ENDIF
+EdhoradiacontOnExit
+   If (QRAT010.horadiacont > 0) then
+     // Se estiver parametrizado Cálculo Automático da Jornada de Trabalho...
+     If (QParametros2.valorparamsis = 'S') then
+         QRAT010.horasemcont := (QRAT010.horadiacont * 5);
+         QRAT010.horamencont := (QRAT010.horasemcont * 5);
+     Else
+      //Se Estiver em Branco, sugere o valor calculado
+       If (QRAT010.horasemcont = "") then
+        QRAT010.horasemcont := (QRAT010.horadiacont * 5);
+       Endif
+   
+     // Se Estiver em Branco, sugere o valor calculado
+       If (QRAT010.horamencont = "") then
+         QRAT010.horamencont := (QRAT010.horasemcont * 5);
+       EndIf
+     Endif
+   Endif
+   
+   // QRAT010.horasemcont := (QRAT010.horadiacont * 5);
+Edhorasemcont1OnExit
+   
+   If (QRAT010.horasemcont > 0) then
+     // Se estiver parametrizado Cálculo Automático da Jornada de Trabalho...
+    If (QParametros2.valorparamsis = 'S') then
+       QRAT010.horamencont := (QRAT010.horasemcont * 5);
+       QRAT010.horadiacont := (QRAT010.horasemcont / 5);
+     Else
+       // Atualiza a Jornada Mensal
+       QRAT010.horamencont := (QRAT010.horasemcont * 5);
+       // Se Estiver em Branco, sugere o valor calculado
+       If (QRAT010.horadiacont = "") Then
+          QRAT010.horadiacont := (QRAT010.horasemcont / 5);
+       EndIf;
+     EndIf;
+   Endif;
+
+Edhorasemcont1OnExitModified
+
+   if (EdCodCargo.text <> "") then
+     if (QRXT007.ctlplcar <> 0) then
+       if (QRAT010.horasemcont <> QRAT001.cargasemana) then
+          ShowMess("Horas semanais do contrato difere do cargo !!");
+       endif
+     endif
+   endif
+
+QRAT001AfterOpen
+   If (QRAT001.consreg <> "") then
+       QRXT001i.Params.idtabdiv := QRAT001.consreg;
+       QRXT001i.Params.itemtabdiv := Null;
+       QRXT001i.Open;
+       Edconsreg.Text := QRXT001i.itemtabdiv;
+   
+     if ((QRAT010.state = Insert) or (QRAT010.state = Edit)) then
+          QRAT010.consreg := QRXT001i.idtabdiv;
+     endif
+   
+     Edconsreg.EditColor := "BtnFace";
+     SLConsReg.Enabled   := False;
+   endif
+   
+   If (QRAT001.agentepolitico <> "") Then
+      EdMotInexRem.Enabled   := True;
+      EdMotInexRem.EditColor := "Window";
+      SLMotInexRem.Enabled   := True;
+   Else
+      EdMotInexRem.Enabled   := False;
+      EdMotInexRem.EditColor := "BtnFace";
+      SLMotInexRem.Enabled   := False;
+   Endif
+   
+   if (QRAT010.state = Insert) then
+       QRAT010.horasemcont := QRAT001.cargasemana;
+       EdHorasMens.Text    := (QRAT010.horasemcont * 5);
+       QRAT010.horadiacont := (QRAT010.horasemcont / 5);
+   endif
+   
+   
+   QRAT001a.Params.idcargo := QRAT001.idmaster;
+   QRAT001a.Open;
+
+SLCargoAfterLookup
+   Edcodcargo.Text := QRAT001.codcargo;
+   
+   if ((EdCodCargo.text <> "") AND (EdCodPadrao.text <> "")) then
+     if (QRAT009.grauinstruc < QRAT001.grauinstruc) then
+         ShowMess("Funcionário com o grau de instrução menor que o exigido para o cargo !!");
+     endif
+   endif
+   
+   QRAT010.descontrato := QRAT001.descargo;
+   
+   if ((QRXT007.ctlplcar <> 0) AND (Edhorasemcont1.text = "")) then
+        QRAT010.horasemcont := QRAT001.cargasemana;
+        EdHorasMens.Text    := (QRAT010.horasemcont * 5);
+        Edhoradiacont.Text  := (QRAT010.horasemcont / 5);
+   endif
+   
+   if ((QRXT007.ctlplcar <> 0) AND (Edcodpadrao.text = "")) then
+        QRAT002.params.idpadrao := QRAT001.idpadrao;
+        QRAT002.params.identpadrao := NULL;
+        QRAT002.open;
+        QRAT010.idpadrao := QRAT002.idpadrao;
+        EdCodPadrao.text := QRAT002.identpadrao;
+   endif
+   
+   if (QRXT007.ctlplcar <> 0) then
+      if (QRAT001.qtdevagaliv < 1) then
+         ShowMess("Cargo não possui vaga para esta admissão.");
+      endif
+   endif
+   
+   if (QRAT001.itemtabdiv = 2) then
+       Checkfunconv.Enabled := True;
+   else
+       Checkfunconv.Enabled := False;
+   endif
+
+EdcodcargoAfterLookup
+   QRAT010.idcargo := QRAT001.idcargo;
+   
+   if ((EdCodCargo.text <> "") AND (EdCodPadrao.text <> "")) then
+     if (QRAT009.grauinstruc < QRAT001.grauinstruc) then
+         ShowMess("Funcionário com o grau de instrução menor que o exigido para o cargo !!");
+     endif
+   endif
+   
+   QRAT010.descontrato := QRAT001.descargo;
+   
+   if (QRXT007.ctlplcar <> 0) then
+       QRAT010.horasemcont := QRAT001.cargasemana;
+   
+       QRAT010.horamencont := (QRAT010.horasemcont * 5);
+       QRAT010.horadiacont := (QRAT010.horasemcont / 5);
+   
+       //EdHorasMens.Text    := (QRAT010.horasemcont * 5);
+       //Edhoradiacont.Text  := (QRAT010.horasemcont / 5);
+   endif
+   
+   if (QRXT007.ctlplcar <> 0) then
+       QRAT002.params.idpadrao    := QRAT001.idpadrao;
+       QRAT002.params.identpadrao := NULL;
+       QRAT002.params.codpadrao   := NULL;
+       QRAT002.open;
+       QRAT010.idpadrao := QRAT002.idpadrao;
+   
+       QParametros.Open;
+       IF (QParametros.valorparamsis = 'S') THEN
+          EdCodPadrao.text := QRAT002.identpadrao;
+       ELSE
+          EdCodPadrao.text := QRAT002.codpadrao;
+       ENDIF
+   
+   endif
+   
+   if (QRXT007.ctlplcar <> 0) then
+      if (QRAT001.qtdevagaliv < 1) then
+         ShowMess("Cargo não possui vaga para esta admissão.");
+      endif
+   endif
+   
+   if (QRAT001.itemtabdiv = 2) then
+       Checkfunconv.Enabled := True;
+   else
+       Checkfunconv.Enabled := False;
+   endif
+
+SLAgenteBeforeLookup
+   ParamDestino.codtabdiv := 25;
+   
+   QRXT001k.Params.itemtabdiv := NULL;
+SLAgenteAfterLookup
+   Edagentnociv.Text := QRXT001K.itemtabdiv;
+   
+   If (QAgNocivoVin.vinculos > 0) Then
+      If (QAgNocivoVin.vinculos > 1) Then
+         ShowMess("Funcionário possui outros " + QAgNocivoVin.vinculos + " vínculos ativos. Verificar Agente Nocivo!");
+      Else
+         ShowMess("Funcionário possui outro vínculo ativo. Verificar Agente Nocivo!");
+      Endif
+   Endif
+
+QRXT001nAfterOpen
+   If ((QRXT001n.itemtabdiv = 1) or (QRXT001n.itemtabdiv = 8)) then
+       DBOpFgts.Enabled :=  True;
+   else
+       DBOpFgts.Enabled :=  False;
+   Endif
+   
+   If (ParamOrigem.MethodoEdicao = Incluir) Then
+      QAgNocivoVin.Params.idfuncionario := ParamOrigem.idfuncionario;
+      QAgNocivoVin.Params.regimejur     := QRXT001n.idtabdiv;
+      QAgNocivoVin.Open;
+   Endif
+
+
+
+EdCatESocialAfterLookup
+   QRAT010.categesocial := QRXT001r.idtabdiv;
+SpeedLookup3BeforeLookup
+   ParamDestino.codtabdiv := 24;
+   
+   QRXT001j.Params.itemtabdiv := NULL;
+SLEsocialBeforeLookup
+   ParamDestino.codtabdiv := 101;
+   QRXT001r.Params.itemtabdiv := NULL;
+SpeedLookup3AfterLookup
+   Edcategsefip.Text := QRXT001J.itemtabdiv;
+SLEsocialAfterLookup
+   Edcatesocial.Text := QRXT001R.itemtabdiv;
+EdagentnocivAfterLookup
+   QRAT010.agentnociv := QRXT001k.idtabdiv;
+QRAT010AfterInsert
+   
+   QRAT010.exercicio := QRXT007.exercicio;
+   
+   if (QRAT009.idfuncionario > 0) then
+     If (qDigitoMatricula.Digito = "S") Then
+         QRAT010.numcontrato := QRAT009.digmatric;
+     Else
+         Qnumcontrato.Params.idfuncionario := QRAT009.idfuncionario;
+         Qnumcontrato.Open;
+         QRAT010.numcontrato := Qnumcontrato.maximo;
+     Endif
+   Endif
+   
+   //QRXT008.Params.idug := GetEnv("IDUGSIS");
+   //QRXT008.Open;
+   
+   QRAT010.datacadastro  := Date;
+   QRAT010.codirrf       := 561;
+   QRAT010.incorpsal     := False;
+   QRAT010.funconv       := False;
+   QRAT010.contrativ     := True;
+   QRAT010.idug          := GetEnv("IDUGSIS");
+   QRAT010.opcaodefgts   := False;
+   QRAT010.tipodeponto   := "L";
+   QRAT010.opcaodefgts   := 0;
+   QRAT010.idfuncionario := QRAT009.idfuncionario;
+   QRAT010.nroregistro   := QRAT009.matricfunci;
+   QRAT010.regimejur     := QRXT001n.idtabdiv;
+   QRAT010.idcargo       := QRAT001.idcargo;
+   QRAT010.vincemprega   := QRXT001a.idtabdiv;
+   QRAT010.tiposalcont   := QRXT001f.idtabdiv;
+   QRAT010.idpadrao      := QRAT002.idpadrao;
+   QRAT010.catfunciona   := QRXT001c.idtabdiv;
+   QRAT010.idempresp     := QRXT014.idempresp;
+   QRAT010.grupoproc     := QRXT001e.idtabdiv;
+   QRAT010.tipadmcaged   := QRXT001h.idtabdiv;
+   QRAT010.tipadmrais    := QRXT001o.idtabdiv;
+   QRAT010.idchapeira    := QRAT005.idchapeira;
+   QRAT010.consreg       := QRXT001i.idtabdiv;
+   QRAT010.idlocal       := QRAT007.idlocal;
+   QRAT010.idlotacao     := QRAT008A.idunidorc;
+   QRAT010.idunidorcaux  := QRAT008.idunidorc;
+   QRAT010.idagencia     := QRXT006.idagencia;
+   QRAT010.categsefip    := QRXT001j.idtabdiv;
+   QRAT010.agentnociv    := QRXT001k.idtabdiv;
+   QRAT010.idhorario     := QRAT013.idhorario;
+   QRAT010.idprevidpatr  := QRFT025.idprevidpatr;
+   QRAT010.idatoadmin    := QRAT023.idatoadmin;
+   QRAT010.horasemcont   := QRAT001.cargasemana;
+   QRAT010.descontrato   := QRAT001.descargo;
+   QRAT010.tipopagto     := 2;
+   QRAT010.numccorrent   := Parametros.numccorrent;
+   QRAT010.cartaosalario := 0;
+   QRAT010.poupanca      := 0;
+   QRAT010.feriascoletiva:= 0;
+   QRAT010.categesocial  := QRXT001r.idtabdiv;
+
+EdcodpagtoOnExit
+   QRFT025.Params.idprevidpatr := NULL;
+EdcodpagtoAfterLookup
+   // 11.03.15 - Ederson - Comentado pois o campo é não editavel e não passa no evento.
+   //            Será transferido para o lookup de padrão de admissão
+   //QRAT010.idprevidpatr := QRFT025.idprevidpatr;
+   
+   //if (ParamOrigem.MethodoEdicao = Incluir) then
+   //    QRAT010.categsefip   := QRFT025.idtabdiv_Categ;
+   //Endif
+   
+   //QRXT001j.Params.itemtabdiv := NULL;
+   //QRXT001j.Params.idtabdiv   := QRAT010.categsefip;
+   //QRXT001j.Open;
+   //Edcategsefip.Text:= QRXT001j.itemtabdiv;
+EdpadAdmissaoOnExit
+   QRAT093.Params.idpadraoadm := NULL;
+   
+   //If (ParamOrigem.MethodoEdicao = Incluir) Then
+   //    Edtipadmrais.SetFocus;
+   //Endif
+EdpadAdmissaoAfterLookup
+   pLPadAdm.Execute;
+SBPadraoAfterLookup
+   pLPadAdm.Execute;
+pLPadAdmOnExecute
+   // Ederson - 11.03.15 - Evento para evitar duplicidade de código e ser executado em eventos
+   // AfterLookup do Panel e SpeedLookup do Padrão de Admissão
+   
+   QRAT010.idpadraoadm := QRAT093.idpadraoadm;
+   EdpadAdmissao.Text  := QRAT093.codpadraoadm;
+   
+   //Rais
+   If (ParamOrigem.MethodoEdicao = Incluir) then
+      QRXT001o.Params.idtabdiv     :=  QRAT093.tipadmrais;
+      QRXT001o.Params.itemtabdiv   :=  Null;
+      QRXT001o.Open;
+      QRAT010.tipadmrais := QRXT001o.idtabdiv;
+      Edtipadmrais.Text := QRXT001o.itemtabdiv;
+   Endif
+   
+   //Categ Funcional
+   QRXT001c.Params.idtabdiv     :=  QRAT093.catfunciona;
+   QRXT001c.Params.itemtabdiv   :=  Null;
+   QRXT001c.Open;
+   QRAT010.catfunciona := QRXT001c.idtabdiv;
+   EdCatfunciona.Text  := QRXT001c.itemtabdiv;
+   
+   //CAGED
+   If (ParamOrigem.MethodoEdicao = Incluir) then
+      QRXT001h.Params.idtabdiv     :=  QRAT093.tipadmcaged;
+      QRXT001h.Params.itemtabdiv   :=  Null;
+      QRXT001h.Open;
+      QRAT010.tipadmcaged := QRXT001h.idtabdiv;
+      Edtipadmcaged.Text  := QRXT001h.itemtabdiv;
+   Endif
+   
+   //Vinculo
+   QRXT001a.Params.idtabdiv     :=  QRAT093.vincemprega;
+   QRXT001a.Params.itemtabdiv   :=  Null;
+   QRXT001a.Open;
+   QRAT010.vincemprega := QRXT001a.idtabdiv;
+   Edvincemprega.Text  := QRXT001a.itemtabdiv;
+   
+   //Tipo Salario
+   If (ParamOrigem.MethodoEdicao = Incluir) then
+      QRXT001f.Params.idtabdiv     :=  QRAT093.tiposalcont;
+      QRXT001f.Params.itemtabdiv   :=  Null;
+      QRXT001f.Open;
+      QRAT010.tiposalcont := QRXT001f.idtabdiv;
+      Edtiposalcont.Text  := QRXT001f.itemtabdiv;
+   Endif
+   
+   //Func Convidado
+   QRAT010.funconv := QRAT093.funconv;
+   
+   //Prev Part Empres
+   QRFT025.Params.idprevidpatr := QRAT093.idprevidpatr;
+   QRFT025.Open;
+   
+   QRAT010.idprevidpatr := QRFT025.idprevidpatr;
+   QRAT010.opcaodefgts  := QRAT093.temfgts;
+   
+   // Categoria Trabalhadores SEFIP - Somente quando inclusão
+   if (ParamOrigem.MethodoEdicao = Incluir) then
+      QRAT010.categsefip   := QRFT025.idtabdiv_Categ;
+   Endif
+   
+   QRXT001j.Params.itemtabdiv := NULL;
+   QRXT001j.Params.idtabdiv   := QRAT010.categsefip;
+   QRXT001j.Open;
+   Edcategsefip.Text:= QRXT001j.itemtabdiv;
+   
+   // Categoria Trabalhadores eSocial - Somente quando inclusão
+   if (ParamOrigem.MethodoEdicao = Incluir) then
+      QRAT010.categesocial   := QRFT025.categesocial;
+   Endif
+   
+   QRXT001r.Params.itemtabdiv := NULL;
+   QRXT001r.Params.idtabdiv   := QRAT010.categesocial;
+   QRXT001r.Open;
+   Edcatesocial.Text:= QRXT001r.itemtabdiv;
+
+EdcodsindicatAfterLookup
+   QRAT010.idempresp := QRXT014.idempresp;
+SLSindicatoBeforeLookup
+   QRXT014.Params.codemp := NULL;
+
+EdcodsindicatOnExit
+   QRXT014.Params.idempresp := NULL;
+
+
+FormOnShow
+   // 2015.01.21 - Robson - C140507-103 - Inicio
+   Parametros.EditaHorasMensais := PegarParametro(SMARrh,"RAT01000-EditaHorasMensais");
+   
+   if (Parametros.EditaHorasMensais = "S") then
+      EdHorasMens.Enabled   := True;
+      EdHorasMens.EditColor := "Window";
+   else
+      EdHorasMens.Enabled   := False;
+      EdHorasMens.EditColor := "InfoBk";
+   endif
+   // 2015.01.21 - Robson - C140507-103 - Fim
+   
+   // Rotina de Designação
+   if (ParamOrigem.ObjOrigem = "RAL10400") then
+      Parametros.Designado := 1;
+   else
+      Parametros.Designado := 0;
+   endif
+   
+   
+   // Configuracao
+   QRXT007.open;
+   
+   QRAT010.Params.idcontrato := ParamOrigem.idcontrato;
+   QRAT010.Open;
+   
+   QXXT005.params.idusr := QRAT010.idusr;
+   QXXT005.params.usr   := NULL;
+   QXXT005.open;
+   
+   Parametros.numccorrent := QRAT010.numccorrent;
+   
+   //if (ParamOrigem.matricfunci > 0) then
+   if (ParamOrigem.idfuncionario > 0) then
+       Edmatricfunci.Enabled   := False;
+       Edmatricfunci.EditColor := "BtnFace";
+       SLmatricula.Enabled     := False;
+       Edregimejur.SetFocus;
+   endif
+   
+   // Matrícula
+   IF ((QRAT010.idfuncionario > 0) or (QRAT010.idfuncionario <> "")) THEN
+        QRAT009.Params.idfuncionario := QRAT010.idfuncionario;
+        QRAT009.Params.idempresa     := IdEmpresa;
+        QRAT009.Params.matricfunci   := NULL;
+        ParamOrigem.idfuncionario    := "";
+   Endif
+   
+   IF ((ParamOrigem.matricfunci <> "") and (ParamOrigem.matricfunci > 0)) THEN
+        QRAT009.Params.idfuncionario := NULL;
+        QRAT009.Params.idempresa     := IdEmpresa;
+        QRAT009.Params.matricfunci   := ParamOrigem.matricfunci;
+   Endif
+   
+   IF ((ParamOrigem.idfuncionario > 0) and  (ParamOrigem.idfuncionario <> "")) Then
+        QRAT009.Params.idfuncionario := ParamOrigem.idfuncionario;
+        QRAT009.Params.idempresa     := IdEmpresa;
+        QRAT009.Params.matricfunci   := NULL;
+   Endif
+   
+   IF ((ParamOrigem.matricfunci = "") and (QRAT010.idfuncionario = "") and (ParamOrigem.idfuncionario = "")) Then
+        QRAT009.Params.idfuncionario := -1;
+        QRAT009.Params.idempresa     := IdEmpresa;
+        QRAT009.Params.matricfunci   := NULL;
+   Endif
+   
+   QRAT009.Open;
+   Edmatricfunci.Text:= QRAT009.matricfunci;
+   
+   
+   // Regime Jurídico
+   QRXT001n.Params.itemtabdiv := NULL;
+   QRXT001n.Params.idtabdiv   := QRAT010.regimejur;
+   QRXT001n.Open;
+   Edregimejur.Text:= QRXT001n.itemtabdiv;
+   
+   // Cargo
+   EdMacrocargo.Visible       := True;
+   QRAT001.Params.codcargo    := NULL;
+   QRAT001.Params.idcargo     := QRAT010.idcargo;
+   QRAT001.Open;
+   Edcodcargo.Text:= QRAT001.codcargo;
+   
+   // Vínculo Empregatício
+   QRXT001a.Params.itemtabdiv := NULL;
+   QRXT001a.Params.idtabdiv   := QRAT010.vincemprega;
+   QRXT001a.Open;
+   Edvincemprega.Text:= QRXT001a.itemtabdiv;
+   
+   // Tipo de Salário
+   QRXT001f.Params.itemtabdiv := NULL;
+   QRXT001f.Params.idtabdiv   := QRAT010.tiposalcont;
+   QRXT001f.Open;
+   Edtiposalcont.Text:= QRXT001f.itemtabdiv;
+   
+   // Padrao de Salário
+   QRAT002.Params.identpadrao := NULL;
+   QRAT002.Params.codpadrao   := NULL;
+   QRAT002.Params.idpadrao    := QRAT010.idpadrao;
+   QRAT002.Open;
+   
+   QParametros.Open;
+   IF (QParametros.valorparamsis = 'S') THEN
+      EdCodPadrao.text          := QRAT002.identpadrao;
+      Edcodpadrao.FindField     := "identpadrao";
+   ELSE
+      EdCodPadrao.text          := QRAT002.codpadrao;
+      Edcodpadrao.FindField     := "codpadrao";
+   ENDIF
+   
+   // Categoria Funcional
+   QRXT001c.Params.itemtabdiv := NULL;
+   QRXT001c.Params.idtabdiv   := QRAT010.catfunciona;
+   QRXT001c.Open;
+   Edcatfunciona.Text:= QRXT001c.itemtabdiv;
+   
+   // Sindicato - Empresa Externa
+   QRXT014.Params.idempresp  := QRAT010.idempresp;
+   QRXT014.Params.codemp     := NULL;
+   
+   QRXT014.Open;
+   Edcodsindicat.Text        := QRXT014.codemp;
+   
+   // Grupo de Processamento
+   QRXT001e.Params.itemtabdiv := NULL;
+   QRXT001e.Params.idtabdiv   := QRAT010.grupoproc;
+   QRXT001e.Open;
+   Edgrupoproc.Text:= QRXT001e.itemtabdiv;
+   
+   // CAGED
+   QRXT001h.Params.itemtabdiv := NULL;
+   QRXT001h.Params.idtabdiv   := QRAT010.tipadmcaged;
+   QRXT001h.Open;
+   Edtipadmcaged.Text:= QRXT001h.itemtabdiv;
+   
+   // Tipo de Adminssão
+   QRXT001o.Params.itemtabdiv := NULL;
+   QRXT001o.Params.idtabdiv   := QRAT010.tipadmrais;
+   QRXT001o.Open;
+   Edtipadmrais.Text:= QRXT001o.itemtabdiv;
+   
+   // Número da Chapeira
+   QRAT005.Params.numchapeira := NULL;
+   QRAT005.Params.idchapeira  := QRAT010.idchapeira;
+   QRAT005.Open;
+   Ednumchapeira.Text := QRAT005.numchapeira;
+   
+   // Conselho Regional
+   QRXT001i.Params.itemtabdiv := NULL;
+   QRXT001i.Params.idtabdiv   := QRAT010.consreg;
+   QRXT001i.Open;
+   Edconsreg.Text:= QRXT001i.itemtabdiv;
+   
+   // Local de Trabalho
+   QRAT007.Params.codlocal := NULL;
+   QRAT007.Params.idlocal  := QRAT010.idlocal;
+   QRAT007.Open;
+   Edcodlocal.Text:= QRAT007.codlocal;
+   
+   // Cadastros por Unidade Orçamentária
+   QRAT030.Params.IdContrato := QRAT010.idcontrato;
+   QRAT030.Params.exercicio  := GetEnv("EXESIS");
+   QRAT030.Open;
+   
+   // Lotação
+   QRAT008A.Params.idunidorc  := QRAT030.idlotacao;
+   QRAT008A.Params.codorganog := NULL;
+   QRAT008A.Open;
+   EdCodorganog.Text    := QRAT008A.codorganog;
+   EdCodorganog.picture := PegarParametro(SmarRh+GetEnv("EXESIS"),"MascLotac");
+   
+   // Unidade Orçamentária
+   QRAT008.Params.idunidorc  := QRAT030.idunidorc;
+   QRAT008.Params.codorganog := NULL;
+   QRAT008.Params.idempresa  := IdEmpresa;
+   QRAT008.Params.exercicio  := GetEnv("EXESIS");
+   QRAT008.Open;
+   EdUnidOrc.Text            := QRAT008.codorganog;
+   EdUnidOrc.picture         := PegarParametro(SmarRh+GetEnv("EXESIS"),"MascUnOrc");
+   
+   // Código da Agencia
+   QRXT006.Params.idbanco    := NULL;
+   QRXT006.Params.codagencia := NULL;
+   QRXT006.Params.idagencia  := QRAT010.idagencia;
+   QRXT006.Open;
+   Edcodagencia.Text:= QRXT006.codagencia;
+   
+   // Código do Banco
+   QRXT005.Params.nrobanco := NULL;
+   QRXT005.Params.idbanco  := QRXT006.idbanco;
+   QRXT005.Open;
+   Edcodbanco.Text:= QRXT005.nrobanco;
+   
+   // Previdência Parte Empresa
+   QRFT025.Params.idprevidpatr := QRAT010.idprevidpatr;
+   //QRFT025.Params.codpagto     := NULL;
+   QRFT025.Open;
+   Edcodpagto.Text := QRFT025.itemtabdiv;
+   
+   // Código da Categoria
+   if (ParamOrigem.MethodoEdicao = Incluir) then
+       QRXT001j.Params.itemtabdiv := NULL;
+       QRXT001j.Params.idtabdiv   := QRFT025.idtabdiv_categ;
+   else
+       QRXT001j.Params.itemtabdiv := NULL;
+       QRXT001j.Params.idtabdiv   := QRAT010.categsefip;
+   Endif
+   QRXT001j.Open;
+   Edcategsefip.Text:= QRXT001j.itemtabdiv;
+   
+   // Código da Categoria do eSocial
+   If (ParamOrigem.MethodoEdicao = Incluir) Then
+       QRXT001r.Params.idtabdiv   := QRFT025.categesocial;
+       QRXT001r.Params.itemtabdiv := NULL;
+   Else
+       QRXT001r.Params.idtabdiv   := QRAT010.categesocial;
+       QRXT001r.Params.itemtabdiv := NULL;
+   Endif
+   QRXT001r.Open;
+   Edcatesocial.Text := QRXT001r.itemtabdiv;
+   
+   // Agente Nocivo
+   QRXT001k.Params.itemtabdiv := NULL;
+   QRXT001k.Params.idtabdiv   := QRAT010.agentnociv;
+   QRXT001k.Open;
+   Edagentnociv.Text:= QRXT001k.itemtabdiv;
+   
+   // Fonte de Recurso
+   QRAT092.Params.idfonterecurso  := QRAT010.idfonterecurso;
+   QRAT092.Params.codfonterecurso := Null;
+   QRAT092.Open;
+   Edrecurso.Text:= QRAT092.codfonterecurso;
+   
+   // Unidade Gestora
+   If (QRAT010.idug > 0) then
+       QRXT008.Params.idug      := QRAT010.idug;
+       QRXT008.Params.codigoug  := NULL;
+       QRXT008.Params.idempresa := IdEmpresa;
+       QRXT008.Open;
+       Edcodigoug.Text := QRXT008.codigoug;
+   else
+       QRXT008.Params.idug      := getenv("idugsis");
+       QRXT008.Params.codigoug  := NULL;
+       QRXT008.Params.idempresa := IdEmpresa;
+       QRXT008.Open;
+       Edcodigoug.Text := QRXT008.codigoug;
+   Endif
+   
+   //Padrao de Admissao
+   QRAT093.Params.idpadraoadm   := QRAT010.idpadraoadm;
+   QRAT093.Params.codpadraoadm  := Null;
+   QRAT093.Open;
+   EdpadAdmissao.Text := QRAT093.codpadraoadm;
+   
+   //Contrato Temporário
+   If ((QRAT093.temporario = False) or (QRAT093.temporarioindiv = true)) then
+     QRAT096.Params.idtemporario := -1;
+     QRAT096.Params.numprocesso  := Null;
+     QRAT096.Open;
+   else
+    QRAT096.Params.idtemporario := QRAT010.idtemporario;
+    QRAT096.Params.numprocesso  := Null;
+    QRAT096.Open;
+   Endif
+   EdProcesso.Text             := QRAT096.numprocesso;
+   
+   // Horário de Trabalho
+   QRAT013.Params.idhorario   := QRAT010.idhorario;
+   QRAT013.Params.codhoratrab := NULL;
+   QRAT013.Open;
+   Edcodhoratrab.Text := QRAT013.codhoratrab;
+   
+   // Ato Administrativo
+   QRAT023.Params.idatoadmin  := QRAT010.idatoadmin;
+   QRAT023.Params.idempresa   := IdEmpresa;
+   QRAT023.Params.numatoadmin := NULL;
+   QRAT023.Params.exercicio   := NULL;
+   QRAT023.Open;
+   Ednumatoadmin.Text := QRAT023.numatoadmin;
+   Edexercicio.Text   := QRAT023.exercicio;
+   
+   if (ParamOrigem.MethodoEdicao = Incluir) then
+      Lsituacao.Caption := "";
+      Edcodausencia.Text := "";
+   else
+     //Dados da ausencia
+     QRXT001p.Params.idtabdiv := QRAT010.codausencia;
+     QRXT001p.Open;
+     Edcodausencia.Text := QRXT001p.itemtabdiv;
+   
+     If ((QRAT010.rescisao = True) or (QRAT010.suspenso = True))then
+          Lsituacao.Caption := QRXT001p.descrnormal;
+     else
+          Lsituacao.Caption := "TRABALHANDO";
+     Endif
+   
+   Endif
+   
+   QRXT001q.Params.idtabdiv   := QRAT010.motivoagentepolitico;
+   QRXT001q.Params.itemtabdiv := NULL;
+   QRXT001q.Open;
+   EdMotInexRem.Text := QRXT001q.itemtabdiv;
+   
+   // Local origem de Trabalho
+   QRAT007a.Params.codlocal := NULL;
+   QRAT007a.Params.idlocal  := QRAT010.idlocalorigem;
+   QRAT007a.Open;
+   EdlocalOr.Text:= QRAT007a.codlocal;
+   
+   
+   if (ParamOrigem.MethodoEdicao = Alterar) then
+   
+       IF (Parametros.Designado = 0) then
+   
+   		Edmatricfunci.Enabled   := False;
+   		Edmatricfunci.EditColor := "BtnFace";
+   		SLMatricula.Enabled     := False;
+   
+   		EdNumcontrato.Enabled   := True;
+   		EdNumcontrato.EditColor := "Window";
+   
+   		Edcodorganog.enabled    := False;
+   		Edcodorganog.EditColor  := "BtnFace";
+   		SLLotacao.Enabled       := False;
+   
+   		Edcodigoug.Enabled      := False;
+   		Edcodigoug.EditColor    := "BtnFace";
+   		SLug.Enabled            := False;
+   
+   		EdCodLocal.enabled      := False;
+   		EdCodLocal.EditColor    := "BtnFace";
+   		SLLocal.Enabled         := False;
+   
+   		EdUnidOrc.enabled       := False;
+   		EdUnidOrc.EditColor     := "BtnFace";
+   		SLUnidOrc.Enabled       := False;
+   
+   		EdCodCargo.enabled      := False;
+   		EdCodCargo.EditColor    := "BtnFace";
+   		SLCargo.Enabled         := False;
+   
+   		EdCodPadrao.enabled     := False;
+   		EdCodPadrao.EditColor   := "BtnFace";
+   		SLCodPadrao.Enabled     := False;
+   
+   		CBXTipopagto.Enabled    := False;
+   		CBXTipopagto.Color      := "BtnFace";
+   
+   		Edcodbanco.Enabled      := False;
+   		Edcodbanco.EditColor    := "BtnFace";
+   
+   		SLBanco.Enabled         := False;
+   
+   		Edcodagencia.Enabled    := False;
+   		Edcodagencia.EditColor  := "BtnFace";
+   
+   		SLAgencia.Enabled       := False;
+   
+   		Ednumccorrent.Enabled   := False;
+   		Ednumccorrent.EditColor := "BtnFace";
+   
+   		Edregimejur.Enabled     := False;
+   		Edregimejur.EditColor   := "BtnFace";
+   		SLRegime.Enabled        := False;
+   
+   	  If (Edmatricfunci.Enabled = "False") then
+   		  Ednroregistro.SetFocus;
+   	  Endif
+       Else // Designado
+   		Edmatricfunci.Enabled   := False;
+   		Edmatricfunci.EditColor := "BtnFace";
+   		SLMatricula.Enabled     := False;
+   
+   		EdNumcontrato.Enabled   := True;
+   		EdNumcontrato.EditColor := "Window";
+   
+   		Edcodorganog.enabled    := False;
+   		Edcodorganog.EditColor  := "BtnFace";
+   		SLLotacao.Enabled       := False;
+   
+   		Edcodigoug.Enabled      := False;
+   		Edcodigoug.EditColor    := "BtnFace";
+   		SLug.Enabled            := False;
+   
+   		EdUnidOrc.enabled       := False;
+   		EdUnidOrc.EditColor     := "BtnFace";
+   		SLUnidOrc.Enabled       := False;
+   
+                   Edcodigoug.enabled      := False;
+                   Edcodigoug.EditColor    := "BtnFace";
+                   SLug.Enabled            := False;
+   
+                   Edregimejur.enabled     := False;
+                   Edregimejur.EditColor   := "BtnFace";
+                   SLRegime.enabled        := False;
+   
+       Endif
+   Endif
+   
+   
+   if ((ParamOrigem.MethodoEdicao = Incluir) or
+       (ParamOrigem.MethodoEdicao = Copiar)) then
+        Edseqcalculo.Enabled   := False;
+        Edseqcalculo.EditColor := "BtnFace";
+   
+     If (Edmatricfunci.Enabled = "False") then
+         Edregimejur.SetFocus;
+     Endif
+   
+   endif
+   
+   Ednumcontrato.Enabled   := True;
+   Ednumcontrato.EditColor := "Window";
+   
+   if (ParamOrigem.MethodoEdicao = Alterar) then
+     if (QRAT001.itemtabdiv = 2) then
+   	Checkfunconv.Enabled := True;
+     else
+   	Checkfunconv.Enabled := False;
+     endif
+   endif
+   
+   
+   //If (QRAT010.horasemcont > 0) then
+   //showmess(1);
+   //    EdHorasMens.Text := (QRAT010.horasemcont * 5);
+   //else
+     //  EdHorasMens.Text := "";
+   //Endif
+   
+   //Controle para OPTANTE FGTS
+   
+   If (QRAT010.opcaodefgts = True) then
+       Eddatadeopcao.Enabled   :=  True;
+       Eddatadeopcao.EditColor :=  "Window";
+       Ednocontafgts.Enabled   :=  True;
+       Ednocontafgts.EditColor :=  "Window";
+   else
+       Eddatadeopcao.Enabled   := False;
+       Eddatadeopcao.EditColor := "BtnFace";
+       Ednocontafgts.Enabled   :=  False;
+       Ednocontafgts.EditColor :=  "BtnFace";
+   Endif
+   
+   qDigitoMatricula.Open;
+   
+   // Validação do Banco Banestes
+   Parametros.Aceita := 0;
+   
+   
+   
+   
+   if (QRAT010.rescisao = True) then
+     eddatadmissao.enabled := "FALSE";
+     Wcalbutton.enabled    := "FALSE";
+   endif
+   
+   if (ParamOrigem.MethodoEdicao = "Consultar") then
+     wwDBGrid.Enabled := "False";
+   endif
+   
+   if (QRXT007.ctrltempo = 0) then
+       TabSheet1.Visible := "False";
+   else
+      if (ParamOrigem.MethodoEdicao = "Incluir") then
+        TabSheet1.Visible := "False";
+      endif
+   endif
+   
+   // Lê o Parâmetro para calculo automático das jornada de trabalho
+   QParametros2.Open;
+   
+   QContratoAnt.Params.idcontratoant := QRAT010.idcontratoant;
+   QContratoAnt.Open;
+   
+   if (QContratoAnt.numcontrato = "") then
+      GBContratoAnt.Visible := False;
+      Form.Height := 535;
+   endif
+   
+   
+   //Libera a Digitação(na Guia Ponto/Pagamento/Recolhimento) dos campos Horas Diárias e Horas Semanais
+   QLiberaHrsDiaSem.Open;
+   
+   //Libera a Digitação(na Guia Ponto/Pagamento/Recolhimento) do campo Horario, já que tem o processo de transferência
+   QLiberaHorario.Open;
+   
+   
+   //Libera o campo Tipo de Ponto para Alteração. Se utilizar transferencia de Chapeira, não é permitido a alteração.
+   QUtilizaChapeira.Open;
+   
+   If (ParamOrigem.MethodoEdicao = Alterar) then
+   
+    If (QLiberaHrsDiaSem.ValorParametro = "S") then
+       Edhoradiacont.Enabled    := True;
+       Edhoradiacont.EditColor  := "Window";
+       Edhorasemcont1.Enabled   := True;
+       Edhorasemcont1.EditColor := "Window";
+    Else
+       Edhoradiacont.Enabled    := False;
+       Edhoradiacont.EditColor  := "BtnFace";
+       Edhorasemcont1.Enabled   := False;
+       Edhorasemcont1.EditColor := "BtnFace";
+    Endif
+   
+    If (QLiberaHorario.ValorParametro = "S") then
+       Edcodhoratrab.Enabled    := True;
+       Edcodhoratrab.EditColor  := "Window";
+       SHorario.Enabled         := True;
+    Else
+       Edcodhoratrab.Enabled    := False;
+       Edcodhoratrab.EditColor  := "BtnFace";
+       SHorario.Enabled         := False;
+    Endif
+   endif
+   
+   Ednumconcurso.Picture  := PegarParametro(SMARrh,"MascNroConcurso");
+   
+   BitBtn.Visible := False;
+   
+   // Verifica se campos do eSocial devem estar disponíveis
+   qVerifESocial.Open;
+   pHabDesab_eSocial.Execute;
+   
+   PanelButtons.PreparaManut;
+pHabDesab_eSocialOnExecute
+   // Função para visualizar ou não os campos do eSocial em acordo ao parâmetro
+   EdCatESocial.Visible  := qVerifESocial.Visualiza;
+   SLEsocial.Visible     := qVerifESocial.Visualiza;
+   DBTCatESocial.Visible := qVerifESocial.Visualiza;
+
+EdCatESocialOnExit
+   QRXT001r.Params.idtabdiv := NULL;
+   
+   pgc.SelectNextPage;
+EdagentnocivOnExit
+   QRXT001k.Params.idtabdiv := NULL;
+   
+   If (QAgNocivoVin.vinculos > 0) Then
+      If (QAgNocivoVin.vinculos > 1) Then
+         ShowMess("Funcionário possui outros " + QAgNocivoVin.vinculos + " vínculos ativos. Verificar Agente Nocivo!");
+      Else
+         ShowMess("Funcionário possui outro vínculo ativo. Verificar Agente Nocivo!");
+      Endif
+   Endif
+   
+   // 11/03/2015 - Ederson - Não passar pagina pois pode haver o preenchimento da categesocial e não
+   // estiver visivel a categoria, passar para a proxima pagina
+   If ((QRAT010.opcaodefgts = False) And (edCatESocial.Visible = False)) Then
+      pgc.SelectNextPage;
+   Endif
+DBOpFgtsOnExit
+   If (QRAT010.opcaodefgts = True) then
+       Eddatadeopcao.Enabled   :=  True;
+       Eddatadeopcao.EditColor :=  "Window";
+       Ednocontafgts.Enabled   :=  True;
+       Ednocontafgts.EditColor :=  "Window";
+       If ((ParamOrigem.MethodoEdicao = Incluir) AND (QRAT010.State = Insert)) Then
+           QRAT010.datadeopcao := QRAT010.datadmissao;
+       Endif
+   else
+       If ((ParamOrigem.MethodoEdicao = Incluir) AND (QRAT010.State = Insert)) Then
+          QRAT010.datadeopcao     := "";
+       Endif
+       Eddatadeopcao.Enabled   := False;
+       Eddatadeopcao.EditColor := "BtnFace";
+       If ((ParamOrigem.MethodoEdicao = Incluir) AND (QRAT010.State = Insert)) Then
+          QRAT010.nocontafgts    := "";
+       Endif
+       Ednocontafgts.Enabled   :=  False;
+       Ednocontafgts.EditColor :=  "BtnFace";
+   Endif
+
+QRAT010BeforePost
+   
+   if (QRAT009.idfuncionario > 0) then
+       QRAT010.idfuncionario := QRAT009.idfuncionario;
+   else
+       QRAT010.idfuncionario := ParamOrigem.idfuncionario;
+   endif
+   
+   If (QRAT010.datafimcontrato = "") then
+       QRAT010.datafimcontrato := QRAT010.datafimexerc;
+   Endif
+   
+   If (ParamOrigem.MethodoEdicao = Incluir) then
+     QSeqCalculo.Open;
+     QRAT010.seqcalculo := QSeqCalculo.seq;
+   Endif
+   
+   //Contrato Temporário
+   If ((QRAT093.temporario = False) or (QRAT093.temporarioindiv = true)) then
+      QRAT010.idtemporario := "";
+   Endif
+   
+   If ((QRAT010.datafimcontrato <> "") AND (QRAT010.datafimexerc <> "") AND (QRAT010.datafimcontrato < QRAT010.datafimexerc)) then
+      RaiseExcept("A Data de Encerramento não pode ser menor que a de Término para este Tipo de Admissão");
+   Endif
+   
+   // Validação do banco Banestes / Cartão Salario ------------------------------------------------------------------------------------
+   QValidaCCorrente.Open;
+   
+   If ((QRAT010.tipopagto = 2) and (QRAT010.numccorrent = "") and (QRAT010.cartaosalario = "True") and (QRXT005.nrobanco = 21) and (QValidaCCorrente.valor = "S")) then
+      Parametros.Aceita := 1;
+   else
+      Parametros.Aceita := 0;
+   endif
+   
+   if ((QRAT010.tipopagto = 2) and (QRAT010.numccorrent = "") and (Parametros.Aceita = 0)) then
+      Ednumccorrent.SetFocus;
+      RaiseExcept("Para o tipo de pagamento Depósito a conta corrente não pode ser nula.");
+   endif
+   //-------------------------------------------------------------------------------------------------------------------------------------
+   
+   if (QRAT010.numcontrato = "") then
+       Ednumcontrato.SetFocus;
+       RaiseExcept("Especifique o Número do Contrato!");
+   endif
+   
+   if ((QRAT010.opcaodefgts = True) AND (QRAT010.datadeopcao <> NULL) AND (QRAT010.datadeopcao <> QRAT010.datadmissao)) then
+        Eddatadeopcao.SetFocus;
+        RaiseExcept("Data Opção FGTS difere da data de admissão");
+   endif
+   
+   //If ((qDigitoMatricula.Digito = "S") AND (ParamOrigem.MethodoEdicao = Incluir)) Then
+   //   QRAT010.numcontrato := QRAT009.digmatric;
+   //Endif
+   
+   QXXT005.params.idusr := NULL;
+   QXXT005.params.usr   := LoginUsuario;
+   QXXT005.open;
+   
+   QRAT010.idusr        := QXXT005.idusr;
+   QRAT010.datadodia    := hojehora;
+   
+   QControlaFRCusteio.Params.exercicio    := QRXT007.exercicio;
+   QControlaFRCusteio.Params.custeio      := QRAT008.idunidorc;
+   QControlaFRCusteio.Params.fonterecurso := QRAT092.idfonterecurso;
+   QControlaFRCusteio.Open;
+   
+   QControlaFonteRecurso.Params.exercicio    := QRXT007.exercicio;
+   QControlaFonteRecurso.Params.fonterecurso := QRAT092.idfonterecurso;
+   QControlaFonteRecurso.Open;
+   
+   QControlaCusteio.Params.exercicio := QRXT007.exercicio;
+   QControlaCusteio.Params.custeio   := QRAT008.idunidorc;
+   QControlaCusteio.Open;
+   
+   
+   If (QRXT007.ctlcontclasscp = 1) Then
+   
+      If (QRXT007.formaempenho > 0) Then
+   
+         If (QControlaFonteRecurso.Existe <> 1) Then
+            ShowMess("Fonte de Recurso não prevista na classificação contábil!");
+         EndIf
+   
+         If (QControlaCusteio.Existe <> 1) Then
+            ShowMess("Custeio não previsto na classificação contábil!");
+         EndIf
+   
+         If (QRXT007.formaempenho > 1) Then
+            If (QControlaFonteRecurso.Existe <> 1) Then
+               ShowMess("Fonte de Recurso e Custeio não previstos na classificação contábil!");
+            EndIf
+         Endif
+      EndIf
+   
+   EndIf
+
